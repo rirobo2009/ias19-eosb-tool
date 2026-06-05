@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IAS 19 – UAE EOSB Actuarial Valuation Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy:#0D1B2A; --navy-mid:#162336; --navy-light:#1E3050;
+    --gold:#C9A84C; --gold-light:#E8C97A; --gold-dim:#8A6E2F;
+    --slate:#8FA8C0; --slate-light:#B8CDD9; --white:#F5F7FA;
+    --green:#4CAF82; --red:#E05C5C; --border:rgba(201,168,76,0.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--navy);color:var(--white);font-family:Georgia,serif;min-height:100vh;}
+  input,select{background:rgba(13,27,42,0.85);border:1px solid var(--border);border-radius:6px;
+    color:var(--white);padding:8px 11px;font-size:13px;font-family:'Courier New',monospace;
+    width:100%;outline:none;transition:border .2s;}
+  input:focus,select:focus{border-color:var(--gold);}
+  select option{background:#162336;}
+  button{cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:.06em;transition:all .2s;}
+
+  /* HEADER */
+  .hdr{background:linear-gradient(135deg,var(--navy-mid),var(--navy-light));
+    border-bottom:1px solid var(--border);padding:26px 36px 0;position:relative;overflow:hidden;}
+  .hdr::after{content:'';position:absolute;top:0;right:0;width:320px;height:100%;
+    background:radial-gradient(ellipse at top right,rgba(201,168,76,.09),transparent 70%);pointer-events:none;}
+  .hdr-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;}
+  .hdr-badge{font-size:10px;letter-spacing:.2em;color:var(--gold-dim);font-family:'Courier New',monospace;
+    text-transform:uppercase;margin-bottom:6px;}
+  .hdr-title{font-size:24px;font-weight:700;color:var(--gold-light);}
+  .hdr-sub{font-size:12px;color:var(--slate);margin-top:4px;font-family:'Courier New',monospace;}
+  .hdr-co input{width:210px;text-align:right;font-size:14px;}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;margin-top:22px;}
+  .tab{padding:9px 22px;border:1px solid var(--border);font-size:12px;font-family:'Courier New',monospace;
+    background:transparent;color:var(--slate);}
+  .tab:first-child{border-radius:6px 0 0 6px;}
+  .tab:last-child{border-radius:0 6px 6px 0;}
+  .tab.active{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+
+  /* BODY */
+  .body{max-width:1120px;margin:0 auto;padding:30px 22px;}
+  .sec-hdr{margin-bottom:4px;}
+  .sec-title{font-size:17px;font-weight:700;color:var(--gold-light);}
+  .sec-sub{font-size:12px;color:var(--slate);font-family:'Courier New',monospace;margin-top:3px;}
+
+  /* GRID */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px;}
+  @media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+
+  /* CARD */
+  .card{background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:20px 22px;}
+  .card.gold-border{border-color:var(--gold);}
+  .card-title{font-size:11px;letter-spacing:.1em;color:var(--gold);font-family:'Courier New',monospace;
+    text-transform:uppercase;font-weight:700;margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .label{font-size:11px;letter-spacing:.07em;color:var(--gold-dim);font-family:'Courier New',monospace;
+    text-transform:uppercase;margin-bottom:4px;}
+
+  /* EMPLOYEE ROW */
+  .emp-row{background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;
+    padding:18px 22px;margin-bottom:14px;}
+  .emp-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .emp-num{font-size:11px;letter-spacing:.1em;color:var(--gold);font-family:'Courier New',monospace;text-transform:uppercase;}
+  .emp-grid{display:grid;grid-template-columns:1.1fr 1.7fr 1fr 1fr 1fr 1fr 1fr;gap:14px;}
+  @media(max-width:700px){.emp-grid{grid-template-columns:1fr 1fr;}}
+  .btn-remove{background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.4);color:var(--red);
+    border-radius:4px;padding:4px 12px;font-size:11px;font-family:'Courier New',monospace;}
+  .btn-add{background:transparent;border:1px dashed var(--gold-dim);border-radius:8px;color:var(--gold);
+    padding:12px;font-size:12px;width:100%;margin-top:6px;font-family:'Courier New',monospace;letter-spacing:.07em;}
+  .btn-add:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+
+  /* BUTTONS */
+  .btn-primary{background:var(--gold);color:var(--navy);border:1px solid var(--gold);border-radius:6px;padding:10px 24px;font-size:12px;}
+  .btn-primary:hover{background:var(--gold-light);}
+  .btn-secondary{background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:10px 24px;font-size:12px;}
+  .btn-secondary:hover{background:rgba(201,168,76,.08);}
+  .btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:26px;}
+
+  /* ERRORS */
+  .errors{margin-top:18px;background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.3);border-radius:8px;padding:14px 18px;}
+  .err-item{color:var(--red);font-size:12px;font-family:'Courier New',monospace;margin-bottom:4px;}
+
+  /* RESULTS */
+  .report-hdr{background:linear-gradient(135deg,var(--navy-light),var(--navy-mid));border:1px solid var(--gold);
+    border-radius:12px;padding:26px 30px;margin-bottom:26px;}
+  .report-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px;}
+  @media(max-width:700px){.report-meta{grid-template-columns:1fr 1fr;}}
+  .meta-key{font-size:10px;color:var(--gold-dim);font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.07em;}
+  .meta-val{font-size:14px;color:var(--white);margin-top:3px;}
+
+  /* TABLES */
+  .tbl-wrap{overflow-x:auto;margin-top:14px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{padding:9px 14px;color:var(--gold);font-family:'Courier New',monospace;font-size:11px;
+    letter-spacing:.07em;font-weight:700;border-bottom:2px solid var(--gold);}
+  tbody td{padding:9px 14px;border-bottom:1px solid var(--border);font-family:'Courier New',monospace;font-size:12px;}
+  tbody tr:nth-child(even){background:rgba(22,35,54,.5);}
+  .bold-row td{font-weight:700;color:var(--gold-light)!important;background:rgba(201,168,76,.06)!important;}
+  .r{text-align:right;}
+  .c{text-align:center;}
+  .neg{color:var(--green)!important;}
+  .pos{color:var(--red)!important;}
+
+  /* KPI CARDS */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:0;}
+
+  /* ROW ITEM */
+  .row-item{display:flex;justify-content:space-between;padding:5px 0;
+    border-bottom:1px solid rgba(201,168,76,.1);font-size:12px;font-family:'Courier New',monospace;}
+  .row-key{color:var(--slate);}
+  .row-val{color:var(--white);}
+  .row-val.bold{color:var(--gold-light);font-weight:700;}
+
+  /* AUDIT BANNER */
+  .audit-banner{margin-top:22px;padding:16px 22px;background:rgba(76,175,130,.08);
+    border:1px solid rgba(76,175,130,.3);border-radius:8px;}
+  .audit-title{font-size:12px;color:var(--green);font-family:'Courier New',monospace;font-weight:700;margin-bottom:8px;}
+  .audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;color:var(--slate-light);font-family:'Courier New',monospace;}
+
+  /* DISCLOSURE NOTE */
+  .disclosure{background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;
+    padding:26px 30px;font-size:13px;line-height:2;color:var(--slate-light);margin-top:14px;}
+  .disclosure h3{color:var(--gold-light);font-size:16px;margin-bottom:14px;}
+  .disclosure p{margin-bottom:10px;}
+
+  /* NOTE BOX */
+  .note-box{margin-top:12px;padding:14px 18px;background:rgba(201,168,76,.07);border:1px solid var(--border);
+    border-radius:8px;font-size:12px;color:var(--slate-light);line-height:1.8;}
+
+  
+  .upload-box{margin-top:22px;background:rgba(201,168,76,.06);border:1px dashed var(--gold-dim);border-radius:10px;padding:16px 18px;}
+  .upload-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:end;}
+  @media(max-width:700px){.upload-grid{grid-template-columns:1fr;}}
+  .small-note{font-size:11px;color:var(--slate);font-family:'Courier New',monospace;line-height:1.7;margin-top:8px;}
+  .chip{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:3px 8px;margin:2px;color:var(--slate-light);font-size:10px;font-family:'Courier New',monospace;}
+
+  /* LEAD CAPTURE MODAL */
+  .lead-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center;padding:20px;}
+  .lead-modal{width:100%;max-width:460px;background:var(--navy-mid);border:1px solid var(--gold);border-radius:12px;padding:24px;}
+  .lead-title{font-size:18px;color:var(--gold-light);font-weight:700;margin-bottom:8px;}
+  .lead-note{font-size:12px;color:var(--slate-light);line-height:1.7;margin-bottom:16px;font-family:'Courier New',monospace;}
+  .lead-error{display:none;color:var(--red);font-size:12px;font-family:'Courier New',monospace;margin-bottom:10px;}
+
+  /* HIDDEN */
+  .pane{display:none;}
+  .pane.active{display:block;}
+</style>
+</head>
+<body>
+
+<div id="leadModalOverlay" class="lead-modal-overlay">
+  <div class="lead-modal">
+    <div class="lead-title">User Details Required</div>
+    <div class="lead-note">
+      Please enter your details to continue. Your details may be recorded by this tool provider. Valuation data entered in the tool is not transmitted.
+    </div>
+    <div id="leadError" class="lead-error">Please enter valid name, email and company name.</div>
+    <div class="field">
+      <div class="label">Full Name</div>
+      <input id="leadName" placeholder="Your name"/>
+    </div>
+    <div class="field">
+      <div class="label">Email ID</div>
+      <input id="leadEmail" type="email" placeholder="you@example.com"/>
+    </div>
+    <div class="field">
+      <div class="label">Company Name</div>
+      <input id="leadCompany" placeholder="Company name"/>
+    </div>
+    <div class="btn-row" style="margin-top:18px;">
+      <button class="btn-primary" onclick="saveLeadAndContinue()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-badge">IAS 19 Employee Benefits · UAE Gratuity · Projected Unit Credit</div>
+      <div class="hdr-title">Actuarial Valuation Engine</div>
+      <div class="hdr-sub">UAE Federal Decree-Law No. 33 of 2021 &nbsp;|&nbsp; IFRS / IAS 19 Compliant</div>
+    </div>
+    <div class="hdr-co">
+      <div class="label" style="text-align:right;margin-bottom:4px;">Company / Entity</div>
+      <input id="companyName" value="ABC LLC" style="width:210px;text-align:right;font-size:14px;" placeholder="Entity Name"/>
+    </div>
+  </div>
+  <div class="tabs" style="margin-top:22px;">
+    <button class="tab active" onclick="showTab('t1',this)">01. Valuation Parameters</button>
+    <button class="tab" onclick="showTab('t2',this)">02. Employee Data</button>
+    <button class="tab" onclick="showTab('t3',this)">03. IAS 19 Output</button>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- ═══ TAB 1 ═══ -->
+<div id="t1" class="pane active">
+  <div class="sec-hdr">
+    <div class="sec-title">Valuation Parameters</div>
+    <div class="sec-sub">Set actuarial assumptions for the Projected Unit Credit calculation</div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Reporting Details</div>
+      <div class="field"><div class="label">Valuation / Balance Sheet Date</div>
+        <input type="date" id="valuationDate" value="2024-12-31"/></div>
+      <div class="field"><div class="label">Reporting Currency</div>
+        <select id="currency"><option>AED</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+      <div class="field"><div class="label">Prepared By</div>
+        <input id="preparedBy" placeholder="Actuary / Management" /></div>
+      <div class="field"><div class="label">Report / Financial Year</div>
+        <input id="reportYear" placeholder="e.g. Year ended 31 December 2024"/></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Financial Assumptions</div>
+      <div class="field">
+        <div class="label">Discount Rate (% p.a.) — IAS 19.83</div>
+        <input type="number" id="discountRate" value="4.50" step="0.01"/>
+      </div>
+      <div class="field">
+        <div class="label">Salary Escalation Rate (% p.a.)</div>
+        <input type="number" id="salaryGrowth" value="3.00" step="0.01"/>
+      </div>
+      <div class="field">
+        <div class="label">Inflation Rate (% p.a.)</div>
+        <input type="number" id="inflationRate" value="2.50" step="0.01"/>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Demographic Assumptions</div>
+      <div class="field">
+        <div class="label">Employee Attrition / Withdrawal Rate (% p.a.)</div>
+        <input type="number" id="attrition" value="8.00" step="0.01"/>
+      </div>
+      <div class="field">
+        <div class="label">Normal Retirement Age (years)</div>
+        <input type="number" id="retirementAge" value="60" step="1"/>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Regulatory Framework (Fixed)</div>
+      <div class="row-item"><span class="row-key">Benefit Formula</span><span class="row-val">UAE Labour Law (Art. 51)</span></div>
+      <div class="row-item"><span class="row-key">First 5 Years</span><span class="row-val">21 calendar days / year</span></div>
+      <div class="row-item"><span class="row-key">Beyond 5 Years</span><span class="row-val">30 working days / year</span></div>
+      <div class="row-item"><span class="row-key">Maximum Cap</span><span class="row-val">24 months basic salary</span></div>
+      <div class="row-item"><span class="row-key">Valuation Method</span><span class="row-val">Projected Unit Credit (PUC)</span></div>
+      <div class="row-item"><span class="row-key">Discount Basis</span><span class="row-val">UAE Govt bonds (IAS 19.83)</span></div>
+    </div>
+  </div>
+  <div class="note-box">
+    <strong style="color:var(--gold);">ⓘ Auditor Note:</strong>
+    Discount rate should reference market yields on AED-denominated UAE government bonds at the balance sheet date, as no deep corporate bond market exists in the UAE (IAS 19.83). Salary escalation and attrition are management estimates, subject to annual review and approval. The benefit is calculated using monthly basic salary / 30 × statutory gratuity days, capped at 24 months of basic salary.
+  </div>
+  <div class="btn-row">
+    <button class="btn-primary" onclick="goTab('t2')">Next: Employee Data →</button>
+  </div>
+</div>
+
+<!-- ═══ TAB 2 ═══ -->
+<div id="t2" class="pane">
+  <div class="sec-hdr">
+    <div class="sec-title">Employee Census Data</div>
+    <div class="sec-sub">Enter employee census details manually or upload an Excel file. Exit Date blank = continuing employee; Exit Date filled = employee exited during/before the year.</div>
+  </div>
+  <div class="upload-box">
+    <div class="upload-grid">
+      <div>
+        <div class="label">Upload Employee Excel</div>
+        <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)"/>
+        <div class="small-note">
+          Required/accepted columns:
+          <span class="chip">Employee ID</span><span class="chip">Name</span><span class="chip">DOB</span><span class="chip">DOJ</span>
+          <span class="chip">Monthly Basic Salary</span><span class="chip">Exit Date</span><span class="chip">Opening DBO</span>.
+          Opening DBO is optional but recommended for roll-forward from prior valuation.
+        </div>
+      </div>
+      <div>
+        <button class="btn-secondary" onclick="downloadTemplate()" style="width:100%;">⬇ Download Excel Template</button>
+      </div>
+    </div>
+  </div>
+  <div id="empList" style="margin-top:22px;"></div>
+  <button class="btn-add" onclick="addEmployee()">+ Add Employee</button>
+  <div id="errBox" class="errors" style="display:none;"></div>
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="goTab('t1')">← Back</button>
+    <button class="btn-primary" onclick="runValuation()">Run Actuarial Valuation ⟶</button>
+  </div>
+</div>
+
+<!-- ═══ TAB 3 ═══ -->
+<div id="t3" class="pane">
+  <div id="resultsArea">
+    <div style="text-align:center;padding:80px 0;color:var(--slate);">
+      <div style="font-size:44px;margin-bottom:14px;">⟳</div>
+      <div style="font-family:'Courier New',monospace;font-size:14px;">No valuation run yet. Enter data and click "Run Actuarial Valuation".</div>
+      <div style="margin-top:18px;"><button class="btn-primary" onclick="goTab('t1')">Start Valuation</button></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /body -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let empCount = 0;
+let lastResult = null;
+
+// ══════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+function goTab(id) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['t1','t2','t3'].indexOf(id);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EMPLOYEES
+// ══════════════════════════════════════════════════════════════════
+function addEmployee() {
+  empCount++;
+  const id = empCount;
+  const div = document.createElement('div');
+  div.className = 'emp-row';
+  div.id = 'emp_' + id;
+  div.innerHTML = `
+    <div class="emp-hdr">
+      <div class="emp-num">Employee #${String(id).padStart(3,'0')}</div>
+      <button class="btn-remove" onclick="removeEmp(${id})">Remove</button>
+    </div>
+    <div class="emp-grid">
+      <div>
+        <div class="label">Full Name</div>
+        <input id="e${id}_name" placeholder="Employee Name"/>
+      </div>
+      <div>
+        <div class="label">Date of Birth</div>
+        <input type="date" id="e${id}_dob"/>
+      </div>
+      <div>
+        <div class="label">Date of Joining</div>
+        <input type="date" id="e${id}_doj"/>
+      </div>
+      <div>
+        <div class="label">Monthly Basic Salary</div>
+        <input type="number" id="e${id}_sal" placeholder="e.g. 15000"/>
+      </div>
+    </div>`;
+  document.getElementById('empList').appendChild(div);
+}
+function removeEmp(id) {
+  const el = document.getElementById('emp_' + id);
+  if (el) el.remove();
+}
+
+// Pre-load 3 sample employees
+window.onload = function() {
+  addEmployee();
+  addEmployee();
+  addEmployee();
+};
+
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+function fmt(n, d=2) {
+  return Number(n).toLocaleString('en-AE', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function fmtSigned(n) {
+  const v = Number(n);
+  if (v < 0) return '(' + fmt(Math.abs(v)) + ')';
+  return fmt(v);
+}
+function ageAt(dob, date) {
+  return (new Date(date) - new Date(dob)) / (1000*60*60*24*365.25);
+}
+function serviceAt(doj, date) {
+  return (new Date(date) - new Date(doj)) / (1000*60*60*24*365.25);
+}
+
+// UAE Labour Law gratuity days under Federal Decree-Law No. 33 of 2021, Article 51.
+// Gratuity = monthly basic salary / 30 × eligible gratuity days, capped at 24 months of basic salary.
+function uaeGratuityDays(yrs) {
+  if (yrs <= 0) return 0;
+  if (yrs <= 5) return yrs * 21;
+  return (5 * 21) + ((yrs - 5) * 30);
+}
+function uaeBenefit(monthlyBasicSalary, yrs) {
+  const raw = (monthlyBasicSalary / 30) * uaeGratuityDays(yrs);
+  const cap = monthlyBasicSalary * 24;
+  return Math.min(raw, cap);
+}
+function addYears(dateStr, years) {
+  const d = new Date(dateStr);
+  d.setFullYear(d.getFullYear() + years);
+  return d.toISOString().slice(0,10);
+}
+function priorYearDate(dateStr) { return addYears(dateStr, -1); }
+
+// ══════════════════════════════════════════════════════════════════
+// PUC ENGINE
+// ══════════════════════════════════════════════════════════════════
+function pucEmployee(emp, assumptions) {
+  const { dr, sg, att, valDate, retAge } = assumptions;
+
+  const age    = ageAt(emp.dob, valDate);
+  const svc    = Math.max(serviceAt(emp.doj, valDate), 0);
+  const ytr    = Math.max(retAge - age, 0);
+
+  // If an employee is already at or above the stated retirement age, the tool treats
+  // the benefit as payable immediately and does not create artificial future service.
+  const fullSvc = svc + ytr;
+
+  // Projected monthly basic salary at expected exit / retirement date.
+  const projSal = emp.sal * Math.pow(1 + sg, ytr);
+
+  // Projected statutory benefit at expected exit using UAE labour law formula.
+  const projBenefit = uaeBenefit(projSal, fullSvc);
+
+  // PUC attribution. For employees not yet at retirement age, the projected benefit is
+  // attributed on a straight-line basis over total service to expected retirement.
+  const attributionRatio = fullSvc > 0 ? Math.min(svc / fullSvc, 1) : 0;
+
+  // Discount & survival factors to expected exit. Survival factor is not applied where
+  // ytr = 0 because the obligation is treated as immediately payable for valuation purposes.
+  const dfClose = Math.pow(1/(1+dr), ytr);
+  const sfClose = ytr > 0 ? Math.pow(Math.max(1-att, 0), ytr) : 1;
+
+  const DBO_close = projBenefit * attributionRatio * dfClose * sfClose;
+
+  // Prior-year opening DBO is recomputed at the previous reporting date using the salary
+  // implied by the salary-growth assumption. This produces an auditable IAS 19.140 roll-forward.
+  const openDate = priorYearDate(valDate);
+  const age_open = ageAt(emp.dob, openDate);
+  const svc_open = Math.max(serviceAt(emp.doj, openDate), 0);
+  const ytr_open = Math.max(retAge - age_open, 0);
+  const fullSvc_open = svc_open + ytr_open;
+  const sal_open = emp.sal / (1 + sg);
+  const projSal_open = sal_open * Math.pow(1 + sg, ytr_open);
+  const projBenefit_open = uaeBenefit(projSal_open, fullSvc_open);
+  const attrOpen = fullSvc_open > 0 ? Math.min(svc_open / fullSvc_open, 1) : 0;
+  const dfOpen = Math.pow(1/(1+dr), ytr_open);
+  const sfOpen = ytr_open > 0 ? Math.pow(Math.max(1-att, 0), ytr_open) : 1;
+  const DBO_open = projBenefit_open * attrOpen * dfOpen * sfOpen;
+
+  // Current service cost: PV of benefit attributed to service rendered during current year.
+  // If already at/above retirement age, use the change in accrued statutory benefit for the year,
+  // subject to the cap, and do not create continuing service cost once capped.
+  let CSC;
+  if (ytr > 0 && fullSvc > 0) {
+    CSC = (projBenefit / fullSvc) * dfClose * sfClose;
+  } else {
+    const accruedNow = uaeBenefit(emp.sal, svc);
+    const accruedPrior = uaeBenefit(sal_open, svc_open);
+    CSC = Math.max(accruedNow - accruedPrior, 0);
+  }
+
+  const IC = DBO_open * dr;
+
+  // Remeasurement is the balancing item in the IAS 19 movement, not forced to zero.
+  const AGL = DBO_close - DBO_open - CSC - IC;
+
+  const accruedBenefit = uaeBenefit(emp.sal, svc);
+  const capAmount = emp.sal * 24;
+  const capped = Math.abs(accruedBenefit - capAmount) < 0.01 || accruedBenefit >= capAmount - 0.01;
+  const note = age >= retAge
+    ? 'At/above retirement age: obligation treated as immediately payable; no future salary projection.'
+    : (capped ? 'Benefit capped at 24 months basic salary.' : 'Projected to normal retirement age.');
+
+  return {
+    name: emp.name,
+    age: age.toFixed(1),
+    svc: svc.toFixed(1),
+    sal: emp.sal,
+    projSal: projSal.toFixed(0),
+    ytr: ytr.toFixed(1),
+    DBO_open, DBO_close, CSC, IC, AGL,
+    accruedBenefit, projBenefit, capAmount, note,
+    benefitsPaid: 0
+  };
+}
+
+function runPUC(employees, assumptions) {
+  const dr  = parseFloat(assumptions.dr);
+  const sg  = parseFloat(assumptions.sg);
+  const att = parseFloat(assumptions.att);
+  const retAge = parseFloat(assumptions.retAge);
+  const valDate = assumptions.valDate;
+
+  const a = { dr, sg, att, retAge, valDate };
+  const rows = employees.map(e => pucEmployee(e, a));
+
+  const sum = (k) => rows.reduce((s,r) => s + r[k], 0);
+
+  const totals = {
+    DBO_open:   sum('DBO_open'),
+    DBO_close:  sum('DBO_close'),
+    CSC:        sum('CSC'),
+    IC:         sum('IC'),
+    AGL:        sum('AGL'),
+  };
+
+  // Sensitivity
+  const base = rows.reduce((s,r)=>s+r.DBO_close,0);
+  function sensitivityDBO(delta_dr=0, delta_sg=0, delta_att=0) {
+    const a2 = { dr: dr+delta_dr, sg: sg+delta_sg, att: att+delta_att, retAge, valDate };
+    return employees.reduce((s,e) => s + pucEmployee(e,a2).DBO_close, 0);
+  }
+
+  const sensitivities = [
+    { label:'Discount Rate +1%',  dbo: sensitivityDBO(0.01,0,0) },
+    { label:'Discount Rate −1%',  dbo: sensitivityDBO(-0.01,0,0) },
+    { label:'Salary Growth +1%',  dbo: sensitivityDBO(0,0.01,0) },
+    { label:'Salary Growth −1%',  dbo: sensitivityDBO(0,-0.01,0) },
+    { label:'Attrition +1%',      dbo: sensitivityDBO(0,0,0.01) },
+    { label:'Attrition −1%',      dbo: sensitivityDBO(0,0,-0.01) },
+  ].map(s => ({
+    label: s.label,
+    dbo:   s.dbo,
+    change: s.dbo - base,
+    pct:   ((s.dbo - base)/base*100)
+  }));
+
+  return { rows, totals, sensitivities, base };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VALIDATE & COLLECT
+// ══════════════════════════════════════════════════════════════════
+function collectEmployees() {
+  const rows = [];
+  document.querySelectorAll('.emp-row').forEach(div => {
+    const id = div.id.replace('emp_','');
+    rows.push({
+      name: document.getElementById('e'+id+'_name')?.value.trim() || '',
+      dob:  document.getElementById('e'+id+'_dob')?.value || '',
+      doj:  document.getElementById('e'+id+'_doj')?.value || '',
+      sal:  parseFloat(document.getElementById('e'+id+'_sal')?.value) || 0,
+    });
+  });
+  return rows;
+}
+
+function validate(emps, valDate) {
+  const errs = [];
+  if (!document.getElementById('companyName').value.trim()) errs.push('Company name is required.');
+  if (!valDate) errs.push('Valuation date is required.');
+  if (emps.length === 0) errs.push('At least one employee is required.');
+  emps.forEach((e,i) => {
+    const n = i+1;
+    if (!e.name) errs.push(`Employee ${n}: Full name is required.`);
+    if (!e.dob)  errs.push(`Employee ${n}: Date of birth is required.`);
+    if (!e.doj)  errs.push(`Employee ${n}: Date of joining is required.`);
+    if (!e.sal || e.sal <= 0) errs.push(`Employee ${n}: Valid monthly salary required.`);
+    if (e.dob && e.doj && valDate) {
+      const age = ageAt(e.dob, valDate);
+      const svc = serviceAt(e.doj, valDate);
+      if (age < 15) errs.push(`Employee ${n}: Date of birth seems incorrect (age < 15).`);
+      if (svc < 0)  errs.push(`Employee ${n}: Date of joining is after valuation date.`);
+    }
+  });
+  return errs;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MAIN RUN
+// ══════════════════════════════════════════════════════════════════
+function runValuation() {
+  const valDate = document.getElementById('valuationDate').value;
+  const emps    = collectEmployees();
+  const errs    = validate(emps, valDate);
+
+  const errBox = document.getElementById('errBox');
+  if (errs.length > 0) {
+    errBox.style.display = 'block';
+    errBox.innerHTML = errs.map(e => `<div class="err-item">✗ ${e}</div>`).join('');
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const assumptions = {
+    dr:     parseFloat(document.getElementById('discountRate').value)/100,
+    sg:     parseFloat(document.getElementById('salaryGrowth').value)/100,
+    att:    parseFloat(document.getElementById('attrition').value)/100,
+    retAge: parseFloat(document.getElementById('retirementAge').value),
+    valDate,
+  };
+
+  const result = runPUC(emps, assumptions);
+  lastResult = result;
+
+  const meta = {
+    company:    document.getElementById('companyName').value,
+    currency:   document.getElementById('currency').value,
+    valDate,
+    preparedBy: document.getElementById('preparedBy').value || '—',
+    reportYear: document.getElementById('reportYear').value || valDate,
+    discountRate: document.getElementById('discountRate').value,
+    salaryGrowth: document.getElementById('salaryGrowth').value,
+    attrition:    document.getElementById('attrition').value,
+    retAge:       document.getElementById('retirementAge').value,
+    empCount:     emps.length,
+  };
+
+  renderResults(result, meta);
+  goTab('t3');
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER RESULTS
+// ══════════════════════════════════════════════════════════════════
+function renderResults(res, meta) {
+  const { totals, rows, sensitivities } = res;
+  const cur = meta.currency;
+  const netCharge = totals.CSC + totals.IC;
+
+  const html = `
+  <!-- Report Header -->
+  <div class="report-hdr">
+    <div style="font-size:10px;letter-spacing:.25em;color:var(--gold-dim);font-family:'Courier New',monospace;text-transform:uppercase;">Actuarial Valuation Report</div>
+    <div style="font-size:22px;color:var(--gold-light);font-weight:700;margin-top:6px;">IAS 19 — Employee End of Service Benefits</div>
+    <div class="report-meta">
+      ${[['Entity',meta.company],['Valuation Date',meta.valDate],['Currency',cur],['No. of Employees',meta.empCount],
+         ['Discount Rate',meta.discountRate+'%'],['Salary Growth',meta.salaryGrowth+'%'],['Attrition',meta.attrition+'%'],['Prepared By',meta.preparedBy]
+        ].map(([k,v])=>`<div><div class="meta-key">${k}</div><div class="meta-val">${v}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- DBO Movement -->
+  <div class="sec-hdr"><div class="sec-title">Note X — Defined Benefit Obligation (DBO) Movement</div>
+    <div class="sec-sub">Reconciliation of opening and closing balances — IAS 19.140</div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="text-align:left;">Component</th>
+        <th style="text-align:left;">IAS 19 Reference</th>
+        <th class="r">${cur}</th>
+      </tr></thead>
+      <tbody>
+        ${[
+          ['Opening DBO','IAS 19.140(a)', totals.DBO_open, false],
+          ['Current Service Cost','IAS 19.120(a)', totals.CSC, false],
+          ['Interest Cost on DBO','IAS 19.123(b)', totals.IC, false],
+          ['Benefits/settlements Paid during the period','IAS 19.141(g)', 0, false],
+          ['Actuarial (Gains) / Losses — OCI','IAS 19.127', totals.AGL, false],
+          ['Closing DBO','IAS 19.140', totals.DBO_close, true],
+        ].map(([lbl,para,val,bold])=>`
+          <tr class="${bold?'bold-row':''}">
+            <td>${lbl}</td>
+            <td style="color:var(--slate);font-size:11px;">${para}</td>
+            <td class="r ${val<0?'neg':''}">${fmtSigned(val)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" style="margin-top:24px;">
+    <div class="card gold-border">
+      <div class="card-title">P&amp;L Charge — IAS 19.120</div>
+      <div class="row-item"><span class="row-key">Current Service Cost</span><span class="row-val">${cur} ${fmt(totals.CSC)}</span></div>
+      <div class="row-item"><span class="row-key">Net Interest Cost</span><span class="row-val">${cur} ${fmt(totals.IC)}</span></div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+        <div class="row-item"><span class="row-key">Total P&amp;L Charge</span><span class="row-val bold">${cur} ${fmt(netCharge)}</span></div>
+      </div>
+    </div>
+    <div class="card gold-border">
+      <div class="card-title">Other Comprehensive Income — IAS 19.127</div>
+      <div class="row-item"><span class="row-key">Actuarial (Gains) / Losses</span>
+        <span class="row-val ${totals.AGL<0?'neg':''}">${cur} ${fmtSigned(totals.AGL)}</span></div>
+      <div style="font-size:11px;color:var(--slate);margin-top:14px;font-family:'Courier New',monospace;line-height:1.8;">
+        Remeasurements recognised in OCI; not reclassified to P&amp;L in subsequent periods (IAS 19.122).
+      </div>
+    </div>
+  </div>
+
+  <!-- Individual Breakdown -->
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Individual Employee Breakdown</div>
+    <div class="sec-sub">Per-employee PUC computation — actuarial working papers</div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="text-align:left;">Employee</th>
+        <th class="c">Age</th><th class="c">Service<br/>(yrs)</th>
+        <th class="r">Current<br/>Salary</th><th class="r">Projected<br/>Salary</th>
+        <th class="c">Yrs to<br/>Ret.</th>
+        <th class="r">Opening<br/>DBO</th><th class="r">Curr. Svc<br/>Cost</th>
+        <th class="r">Interest<br/>Cost</th><th class="r">Act. G/L</th>
+        <th class="r">Closing<br/>DBO</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r,i)=>`
+          <tr>
+            <td>${r.name}</td>
+            <td class="c">${r.age}</td>
+            <td class="c">${r.svc}</td>
+            <td class="r">${fmt(r.sal,0)}</td>
+            <td class="r" style="color:var(--slate);">${fmt(r.projSal,0)}</td>
+            <td class="c" style="color:var(--slate);">${r.ytr}</td>
+            <td class="r">${fmt(r.DBO_open)}</td>
+            <td class="r" style="color:var(--green);">${fmt(r.CSC)}</td>
+            <td class="r" style="color:var(--slate);">${fmt(r.IC)}</td>
+            <td class="r ${r.AGL<0?'neg':'pos'}">${fmtSigned(r.AGL)}</td>
+            <td class="r" style="color:var(--gold-light);font-weight:700;">${fmt(r.DBO_close)}</td>
+          </tr>`).join('')}
+        <tr class="bold-row">
+          <td>TOTAL</td><td></td><td></td><td></td><td></td><td></td>
+          <td class="r">${fmt(totals.DBO_open)}</td>
+          <td class="r">${fmt(totals.CSC)}</td>
+          <td class="r">${fmt(totals.IC)}</td>
+          <td class="r ${totals.AGL<0?'neg':'pos'}">${fmtSigned(totals.AGL)}</td>
+          <td class="r">${fmt(totals.DBO_close)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note-box">
+    <strong style="color:var(--gold);">Computation notes:</strong><br/>
+    ${rows.map(r => `${r.name}: accrued statutory benefit ${cur} ${fmt(r.accruedBenefit)}; projected benefit ${cur} ${fmt(r.projBenefit)}; ${r.note}`).join('<br/>')}
+  </div>
+
+  <!-- Sensitivity -->
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Sensitivity Analysis</div>
+    <div class="sec-sub">Reasonably possible changes in actuarial assumptions — IAS 19.145</div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="text-align:left;">Assumption Change</th>
+        <th class="r">DBO (${cur})</th>
+        <th class="r">Change (${cur})</th>
+        <th class="r">Change (%)</th>
+      </tr></thead>
+      <tbody>
+        ${sensitivities.map(s=>`
+          <tr>
+            <td>${s.label}</td>
+            <td class="r">${fmt(s.dbo)}</td>
+            <td class="r ${s.change<0?'neg':'pos'}">${s.change<0?'('+fmt(Math.abs(s.change))+')':'+'+fmt(s.change)}</td>
+            <td class="r ${s.pct<0?'neg':'pos'}">${s.pct<0?'('+Math.abs(s.pct).toFixed(1)+'%)':'+'+s.pct.toFixed(1)+'%'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:var(--slate);font-family:'Courier New',monospace;line-height:1.8;">
+    Each scenario changes one assumption while holding all others constant — IAS 19.145(a).
+  </div>
+
+  <!-- Disclosure Note -->
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Financial Statement Disclosure Note</div>
+    <div class="sec-sub">Draft note for inclusion in financial statements — IAS 19.135–148</div></div>
+  <div class="disclosure">
+    <h3>Note X: Employee End of Service Benefits</h3>
+    <p>The Company operates a defined benefit plan for its employees in accordance with UAE Federal Decree-Law No. 33 of 2021 on the Regulation of Labour Relations. The plan provides gratuity benefits calculated on the basis of 21 calendar days' basic salary per year of service for the first five years of service, and 30 calendar days' basic salary per year of service thereafter, subject to a maximum of 24 months' basic salary.</p>
+    <p>The liability recognised in the statement of financial position represents the present value of the defined benefit obligation (DBO) at the end of the reporting period, determined using the Projected Unit Credit (PUC) method in accordance with IAS 19 Employee Benefits.</p>
+    <p><strong style="color:var(--white);">Principal Actuarial Assumptions:</strong></p>
+    <div style="font-family:'Courier New',monospace;font-size:12px;margin-left:16px;margin-bottom:12px;">
+      <div class="row-item"><span class="row-key">Discount Rate</span><span class="row-val">${meta.discountRate}% per annum</span></div>
+      <div class="row-item"><span class="row-key">Salary Escalation Rate</span><span class="row-val">${meta.salaryGrowth}% per annum</span></div>
+      <div class="row-item"><span class="row-key">Attrition / Withdrawal Rate</span><span class="row-val">${meta.attrition}% per annum</span></div>
+      <div class="row-item"><span class="row-key">Normal Retirement Age</span><span class="row-val">${meta.retAge} years</span></div>
+    </div>
+    <p>The discount rate is determined by reference to market yields on UAE government bonds at the balance sheet date, as there is no deep market in high-quality corporate bonds in the UAE, consistent with IAS 19.83. Management should retain evidence that the bond term selected is consistent with the estimated duration of the obligation.</p>
+    <p><strong style="color:var(--white);">Movement in Defined Benefit Obligation (${cur}):</strong></p>
+    <div style="font-family:'Courier New',monospace;font-size:12px;margin-left:16px;margin-bottom:12px;">
+      <div class="row-item"><span class="row-key">Opening DBO</span><span class="row-val">${cur} ${fmt(totals.DBO_open)}</span></div>
+      <div class="row-item"><span class="row-key">Current Service Cost</span><span class="row-val">${cur} ${fmt(totals.CSC)}</span></div>
+      <div class="row-item"><span class="row-key">Interest Cost</span><span class="row-val">${cur} ${fmt(totals.IC)}</span></div>
+      <div class="row-item"><span class="row-key">Benefits Paid</span><span class="row-val">—</span></div>
+      <div class="row-item"><span class="row-key">Actuarial (Gains) / Losses — OCI</span><span class="row-val ${totals.AGL<0?'neg':''}">${cur} ${fmtSigned(totals.AGL)}</span></div>
+      <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+        <div class="row-item"><span class="row-key" style="font-weight:700;color:var(--gold-light);">Closing DBO</span><span class="row-val bold">${cur} ${fmt(totals.DBO_close)}</span></div>
+      </div>
+    </div>
+    <p>The total charge to the income statement for the period comprises current service cost of <strong style="color:var(--white);">${cur} ${fmt(totals.CSC)}</strong> and net interest cost of <strong style="color:var(--white);">${cur} ${fmt(totals.IC)}</strong>, totalling <strong style="color:var(--white);">${cur} ${fmt(netCharge)}</strong>. Remeasurement ${totals.AGL>=0?'losses':'gains'} of <strong style="color:var(--white);">${cur} ${fmt(Math.abs(totals.AGL))}</strong> have been recognised in other comprehensive income and will not be reclassified to profit or loss.</p>
+  </div>
+
+  <!-- Audit Compliance Banner -->
+  <div class="audit-banner">
+    <div class="audit-title">✓ AUDIT COMPLIANCE CHECKLIST — IAS 19</div>
+    <div class="audit-grid">
+      <div>✓ Projected Unit Credit method applied (IAS 19.67)</div>
+      <div>✓ DBO movement reconciliation (IAS 19.140)</div>
+      <div>✓ Current Service Cost disclosed (IAS 19.120(a))</div>
+      <div>✓ Interest Cost disclosed separately (IAS 19.123)</div>
+      <div>✓ Actuarial G/L recognised in OCI (IAS 19.122)</div>
+      <div>✓ Sensitivity analysis — 6 scenarios (IAS 19.145)</div>
+      <div>✓ Actuarial assumptions disclosed (IAS 19.144)</div>
+      <div>✓ Discount rate basis disclosed (IAS 19.83)</div>
+      <div>✓ UAE Labour Law gratuity formula applied</div>
+      <div>✓ Draft disclosure note prepared (IAS 19.135)</div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="goTab('t2')">← Edit Data</button>
+    <button class="btn-secondary" onclick="ensureLeadProfile(function(){ window.print(); })">🖨 Print</button>
+    <button class="btn-secondary" onclick="ensureLeadProfile(downloadDetailedWorking)">⬇ Download Excel Working</button>
+    <button class="btn-primary" onclick="ensureLeadProfile(exportPDF)">⬇ Export PDF Report</button>
+  </div>
+  `;
+
+  document.getElementById('resultsArea').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PDF EXPORT
+// ══════════════════════════════════════════════════════════════════
+function exportPDF() {
+  if (!lastResult) { alert('Please run a valuation first.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const cur      = document.getElementById('currency').value;
+  const company  = document.getElementById('companyName').value;
+  const valDate  = document.getElementById('valuationDate').value;
+  const prepBy   = document.getElementById('preparedBy').value || '—';
+  const dr       = document.getElementById('discountRate').value;
+  const sg       = document.getElementById('salaryGrowth').value;
+  const att      = document.getElementById('attrition').value;
+  const retAge   = document.getElementById('retirementAge').value;
+  const reportYr = document.getElementById('reportYear').value || valDate;
+
+  const { totals, rows, sensitivities } = lastResult;
+  const netCharge = totals.CSC + totals.IC;
+
+  const W = 210, margin = 14;
+  let y = 0;
+
+  // ── Colour helpers ──
+  const NAVY   = [13, 27, 42];
+  const GOLD   = [201, 168, 76];
+  const WHITE  = [245, 247, 250];
+  const SLATE  = [143, 168, 192];
+  const GREEN  = [76, 175, 130];
+  const RED    = [224, 92, 92];
+  const LIGHT  = [230, 237, 242];
+
+  function setFont(style='normal', size=10, color=[245,247,250]) {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+  }
+  function fillRect(x,yy,w,h,color) { doc.setFillColor(...color); doc.rect(x,yy,w,h,'F'); }
+  function addPage() { doc.addPage(); y = 14; }
+  function checkPage(needed=20) { if (y + needed > 280) addPage(); }
+
+  // ═══════════════════════════════════════════════
+  // PAGE 1 — COVER / HEADER
+  // ═══════════════════════════════════════════════
+  fillRect(0,0,W,50,NAVY);
+  // Gold accent bar
+  fillRect(0,50,W,1.5,GOLD);
+
+  // Badge
+  setFont('normal', 7, SLATE);
+  doc.text('IAS 19 EMPLOYEE BENEFITS  |  UAE GRATUITY  |  PROJECTED UNIT CREDIT METHOD', margin, 12);
+
+  // Title
+  setFont('bold', 18, GOLD);
+  doc.text('Actuarial Valuation Report', margin, 24);
+
+  setFont('normal', 10, WHITE);
+  doc.text('Employee End of Service Benefits', margin, 32);
+
+  setFont('normal', 8, SLATE);
+  doc.text('UAE Federal Decree-Law No. 33 of 2021  |  IFRS Compliant', margin, 39);
+
+  // Meta grid (right side of cover band)
+  const metaItems = [
+    ['Entity', company], ['Valuation Date', valDate],
+    ['Currency', cur],   ['Employees', String(rows.length)],
+    ['Discount Rate', dr+'%'], ['Salary Growth', sg+'%'],
+    ['Attrition', att+'%'], ['Prepared By', prepBy],
+  ];
+  const col1x = margin, col2x = W/2 + 4;
+  y = 57;
+  fillRect(0, 53, W, 40, [22,35,54]);
+  metaItems.forEach((item, i) => {
+    const x = i % 2 === 0 ? col1x : col2x;
+    const yy = 57 + Math.floor(i/2) * 9;
+    setFont('normal', 7, [140, 168, 192]);
+    doc.text(item[0].toUpperCase(), x, yy);
+    setFont('bold', 9, WHITE);
+    doc.text(item[1], x, yy + 4);
+  });
+
+  y = 98;
+
+  // ═══════════════════════════════════════════════
+  // SECTION 1 — DBO MOVEMENT
+  // ═══════════════════════════════════════════════
+  // Section header
+  fillRect(margin-2, y, W-margin*2+4, 7, [30,48,80]);
+  setFont('bold', 10, GOLD);
+  doc.text('1.  DEFINED BENEFIT OBLIGATION — MOVEMENT', margin, y+5);
+  y += 10;
+  setFont('normal', 8, SLATE);
+  doc.text('Reconciliation of opening and closing balances in accordance with IAS 19.140', margin, y);
+  y += 7;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Component', 'IAS 19 Reference', cur]],
+    body: [
+      ['Opening Defined Benefit Obligation', 'IAS 19.140(a)', fmt(totals.DBO_open)],
+      ['Current Service Cost', 'IAS 19.120(a)', fmt(totals.CSC)],
+      ['Interest Cost on DBO', 'IAS 19.123(b)', fmt(totals.IC)],
+      ['Benefits/settlements Paid during the period', 'IAS 19.141(g)', '—'],
+      ['Actuarial (Gains) / Losses — OCI', 'IAS 19.127', fmtSigned(totals.AGL)],
+      ['Closing Defined Benefit Obligation', 'IAS 19.140', fmt(totals.DBO_close)],
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fillColor: [22,35,54], textColor: WHITE, fontSize: 9 },
+    alternateRowStyles: { fillColor: [16,28,44] },
+    didParseCell(data) {
+      if (data.row.index === 5) {
+        data.cell.styles.fillColor = [30,48,80];
+        data.cell.styles.textColor = GOLD;
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.section==='body' && data.column.index===2) {
+        data.cell.styles.halign = 'right';
+      }
+      if (data.section==='head' && data.column.index===2) {
+        data.cell.styles.halign = 'right';
+      }
+    },
+    columnStyles: { 0:{cellWidth:90}, 1:{cellWidth:50}, 2:{cellWidth:'auto'} },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ─ P&L and OCI boxes ─
+  checkPage(30);
+  const boxW = (W - margin*2 - 6)/2;
+
+  // P&L box
+  fillRect(margin, y, boxW, 28, [22,35,54]);
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.4);
+  doc.rect(margin, y, boxW, 28);
+  setFont('bold', 8, GOLD);
+  doc.text('P&L CHARGE  (IAS 19.120)', margin+3, y+6);
+  setFont('normal', 8, SLATE);
+  doc.text('Current Service Cost', margin+3, y+13);
+  doc.text('Net Interest Cost', margin+3, y+18);
+  setFont('normal', 8, WHITE);
+  doc.text(cur+' '+fmt(totals.CSC), margin+boxW-3, y+13, {align:'right'});
+  doc.text(cur+' '+fmt(totals.IC),  margin+boxW-3, y+18, {align:'right'});
+  doc.setLineWidth(0.2); doc.setDrawColor(...GOLD);
+  doc.line(margin+3, y+21, margin+boxW-3, y+21);
+  setFont('bold', 9, GOLD);
+  doc.text('Total Charge', margin+3, y+26);
+  doc.text(cur+' '+fmt(netCharge), margin+boxW-3, y+26, {align:'right'});
+
+  // OCI box
+  const box2x = margin + boxW + 6;
+  fillRect(box2x, y, boxW, 28, [22,35,54]);
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.4);
+  doc.rect(box2x, y, boxW, 28);
+  setFont('bold', 8, GOLD);
+  doc.text('OTHER COMPREHENSIVE INCOME  (IAS 19.127)', box2x+3, y+6);
+  setFont('normal', 8, SLATE);
+  doc.text('Actuarial (Gains) / Losses', box2x+3, y+13);
+  setFont('normal', 8, totals.AGL<0?GREEN:WHITE);
+  doc.text(cur+' '+fmtSigned(totals.AGL), box2x+boxW-3, y+13, {align:'right'});
+  setFont('normal', 7, SLATE);
+  const ociNote = 'Not reclassified to P&L in subsequent periods.';
+  doc.text(ociNote, box2x+3, y+22, {maxWidth: boxW-6});
+
+  y += 34;
+
+  // ═══════════════════════════════════════════════
+  // SECTION 2 — INDIVIDUAL BREAKDOWN
+  // ═══════════════════════════════════════════════
+  checkPage(20);
+  fillRect(margin-2, y, W-margin*2+4, 7, [30,48,80]);
+  setFont('bold', 10, GOLD);
+  doc.text('2.  INDIVIDUAL EMPLOYEE BREAKDOWN — ACTUARIAL WORKING PAPERS', margin, y+5);
+  y += 10;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Employee','Age','Service\n(yrs)','Current\nSalary','Projected\nSalary','Yrs to\nRet.','Opening\nDBO','Curr Svc\nCost','Interest\nCost','Act. G/L','Closing\nDBO']],
+    body: [
+      ...rows.map(r => [
+        r.name, r.age, r.svc,
+        fmt(r.sal,0), fmt(r.projSal,0), r.ytr,
+        fmt(r.DBO_open), fmt(r.CSC), fmt(r.IC),
+        fmtSigned(r.AGL), fmt(r.DBO_close)
+      ]),
+      ['TOTAL','','','','','',
+        fmt(totals.DBO_open), fmt(totals.CSC), fmt(totals.IC),
+        fmtSigned(totals.AGL), fmt(totals.DBO_close)]
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle: 'bold', fontSize: 7.5, halign:'right' },
+    bodyStyles: { fillColor: [22,35,54], textColor: WHITE, fontSize: 7.5, halign:'right' },
+    alternateRowStyles: { fillColor: [16,28,44] },
+    didParseCell(data) {
+      if (data.section==='body' && data.column.index===0) data.cell.styles.halign='left';
+      if (data.section==='head' && data.column.index===0) data.cell.styles.halign='left';
+      const lastRow = rows.length;
+      if (data.section==='body' && data.row.index===lastRow) {
+        data.cell.styles.fillColor = [30,48,80];
+        data.cell.styles.textColor = GOLD;
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    styles: { cellPadding: 2 },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ═══════════════════════════════════════════════
+  // SECTION 3 — SENSITIVITY ANALYSIS
+  // ═══════════════════════════════════════════════
+  checkPage(20);
+  fillRect(margin-2, y, W-margin*2+4, 7, [30,48,80]);
+  setFont('bold', 10, GOLD);
+  doc.text('3.  SENSITIVITY ANALYSIS  (IAS 19.145)', margin, y+5);
+  y += 10;
+  setFont('normal', 8, SLATE);
+  doc.text('Each scenario changes one assumption independently, holding all others constant — IAS 19.145(a)', margin, y);
+  y += 6;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Assumption Change', `DBO (${cur})`, `Change (${cur})`, 'Change (%)']],
+    body: sensitivities.map(s => [
+      s.label, fmt(s.dbo),
+      s.change<0?'('+fmt(Math.abs(s.change))+')':'+'+fmt(s.change),
+      s.pct<0?'('+Math.abs(s.pct).toFixed(1)+'%)':'+'+s.pct.toFixed(1)+'%'
+    ]),
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle:'bold', fontSize:9, halign:'right' },
+    bodyStyles: { fillColor:[22,35,54], textColor:WHITE, fontSize:9, halign:'right' },
+    alternateRowStyles: { fillColor:[16,28,44] },
+    didParseCell(data) {
+      if (data.section==='body' && data.column.index===0) data.cell.styles.halign='left';
+      if (data.section==='head' && data.column.index===0) data.cell.styles.halign='left';
+    },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ═══════════════════════════════════════════════
+  // SECTION 4 — DISCLOSURE NOTE
+  // ═══════════════════════════════════════════════
+  checkPage(20);
+  fillRect(margin-2, y, W-margin*2+4, 7, [30,48,80]);
+  setFont('bold', 10, GOLD);
+  doc.text('4.  FINANCIAL STATEMENT DISCLOSURE NOTE  (IAS 19.135–148)', margin, y+5);
+  y += 12;
+
+  setFont('bold', 10, WHITE);
+  doc.text('Note X: Employee End of Service Benefits', margin, y); y+=6;
+
+  const disclosureParas = [
+    `The Company operates a defined benefit plan for its employees in accordance with UAE Federal Decree-Law No. 33 of 2021 on the Regulation of Labour Relations. The plan provides gratuity benefits calculated on the basis of 21 calendar days' basic salary per year of service for the first five years, and 30 calendar days per year thereafter, capped at 24 months' basic salary.`,
+    `The liability recognised in the statement of financial position represents the present value of the defined benefit obligation at the reporting date, determined using the Projected Unit Credit (PUC) method in accordance with IAS 19 Employee Benefits.`,
+    `The discount rate is referenced to market yields on UAE government bonds at the balance sheet date, as there is no deep market in high-quality corporate bonds in the UAE (IAS 19.83). Management should retain evidence that the bond term selected is consistent with the estimated duration of the obligation.`,
+    `The total charge to the income statement comprises current service cost of ${cur} ${fmt(totals.CSC)} and net interest cost of ${cur} ${fmt(totals.IC)}, totalling ${cur} ${fmt(netCharge)}. Remeasurement ${totals.AGL>=0?'losses':'gains'} of ${cur} ${fmt(Math.abs(totals.AGL))} have been recognised in other comprehensive income and will not be reclassified to profit or loss in subsequent periods.`
+  ];
+
+  for (const para of disclosureParas) {
+    checkPage(18);
+    setFont('normal', 8.5, [184,205,217]);
+    const lines = doc.splitTextToSize(para, W - margin*2);
+    doc.text(lines, margin, y);
+    y += lines.length * 4.8 + 3;
+  }
+
+  // Assumptions mini-table
+  checkPage(30);
+  setFont('bold', 9, WHITE);
+  doc.text('Principal Actuarial Assumptions:', margin, y); y+=5;
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Assumption','Rate']],
+    body: [
+      ['Discount Rate', dr+'% per annum'],
+      ['Salary Escalation Rate', sg+'% per annum'],
+      ['Attrition / Withdrawal Rate', att+'% per annum'],
+      ['Normal Retirement Age', retAge+' years'],
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle:'bold', fontSize:9 },
+    bodyStyles: { fillColor:[22,35,54], textColor:WHITE, fontSize:9 },
+    alternateRowStyles: { fillColor:[16,28,44] },
+    columnStyles: { 0:{cellWidth:130} },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ═══════════════════════════════════════════════
+  // SECTION 5 — AUDIT CHECKLIST
+  // ═══════════════════════════════════════════════
+  checkPage(40);
+  fillRect(margin-2, y, W-margin*2+4, 7, [20,60,40]);
+  setFont('bold', 10, GREEN);
+  doc.text('5.  AUDIT COMPLIANCE CHECKLIST', margin, y+5);
+  y += 11;
+
+  const checks = [
+    ['IAS 19.67',  'Projected Unit Credit method applied'],
+    ['IAS 19.140', 'DBO movement reconciliation prepared'],
+    ['IAS 19.120', 'Current Service Cost separately disclosed'],
+    ['IAS 19.123', 'Interest Cost separately disclosed'],
+    ['IAS 19.122', 'Actuarial G/L recognised in OCI'],
+    ['IAS 19.145', 'Sensitivity analysis — 6 scenarios prepared'],
+    ['IAS 19.144', 'All actuarial assumptions disclosed'],
+    ['IAS 19.83',  'Discount rate basis disclosed'],
+    ['Art. 51',    'UAE gratuity formula applied: salary/30 x days, capped at 24 months'],
+    ['IAS 19.135', 'Draft financial statement disclosure note prepared'],
+  ];
+
+  const colW = (W - margin*2)/2;
+  checks.forEach((c, i) => {
+    const x = margin + (i%2 === 0 ? 0 : colW);
+    const yy = y + Math.floor(i/2) * 7;
+    checkPage(8);
+    doc.setFillColor(...GREEN);
+    doc.circle(x+3, yy-1, 1.5, 'F');
+    setFont('bold', 7.5, GREEN); doc.text(c[0], x+7, yy);
+    setFont('normal', 7.5, [184,205,217]); doc.text(c[1], x+30, yy);
+  });
+  y += Math.ceil(checks.length/2)*7 + 6;
+
+  // ═══════════════════════════════════════════════
+  // FOOTER on every page
+  // ═══════════════════════════════════════════════
+  const pageCount = doc.getNumberOfPages();
+  for (let pg = 1; pg <= pageCount; pg++) {
+    doc.setPage(pg);
+    fillRect(0, 287, W, 10, NAVY);
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.3);
+    doc.line(margin, 287, W-margin, 287);
+    setFont('normal', 7, SLATE);
+    doc.text(`${company}  |  IAS 19 Actuarial Valuation  |  ${valDate}`, margin, 293);
+    doc.text(`Page ${pg} of ${pageCount}  |  Prepared by: ${prepBy}`, W-margin, 293, {align:'right'});
+    setFont('normal', 6.5, [80,100,120]);
+    doc.text('This report has been prepared using the Projected Unit Credit method in compliance with IAS 19 Employee Benefits.', W/2, 297, {align:'center'});
+  }
+
+  // ── Save ──
+  doc.save(`IAS19_Valuation_${company.replace(/\s+/g,'_')}_${valDate}.pdf`);
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// FULL REVISED OVERRIDES — Excel upload, roll-forward, expected-exit model
+// ══════════════════════════════════════════════════════════════════
+
+function toISODate(v) {
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number') {
+    const d = XLSX.SSF.parse_date_code(v);
+    if (!d) return '';
+    return `${String(d.y).padStart(4,'0')}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  let s = String(v).trim();
+  if (!s) return '';
+  s = s.replace(/\./g,'/').replace(/-/g,'/');
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let a = parseInt(m[1],10), b = parseInt(m[2],10), y = parseInt(m[3],10);
+    if (y < 100) y += 2000;
+    // UAE/India practical default: DD/MM/YYYY. If first part >12 it is definitely DD/MM.
+    const dd = a, mm = b;
+    return `${String(y).padStart(4,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  }
+  const d = new Date(v);
+  if (!isNaN(d)) return d.toISOString().slice(0,10);
+  return '';
+}
+
+function normKey(k) {
+  return String(k || '').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function pick(row, aliases) {
+  const keys = Object.keys(row);
+  for (const a of aliases) {
+    const na = normKey(a);
+    const k = keys.find(x => normKey(x) === na);
+    if (k !== undefined) return row[k];
+  }
+  return '';
+}
+
+function clearEmployees() {
+  document.getElementById('empList').innerHTML = '';
+  empCount = 0;
+}
+
+function addEmployee(data={}) {
+  empCount++;
+  const id = empCount;
+  const div = document.createElement('div');
+  div.className = 'emp-row';
+  div.id = 'emp_' + id;
+  div.innerHTML = `
+    <div class="emp-hdr">
+      <div class="emp-num">Employee #${String(id).padStart(3,'0')}</div>
+      <button class="btn-remove" onclick="removeEmp(${id})">Remove</button>
+    </div>
+    <div class="emp-grid">
+      <div><div class="label">Employee ID</div><input id="e${id}_empid" placeholder="E001" value="${(data.empid||'').toString().replace(/"/g,'&quot;')}"/></div>
+      <div><div class="label">Full Name</div><input id="e${id}_name" placeholder="Employee Name" value="${(data.name||'').toString().replace(/"/g,'&quot;')}"/></div>
+      <div><div class="label">Date of Birth</div><input type="date" id="e${id}_dob" value="${data.dob||''}"/></div>
+      <div><div class="label">Date of Joining</div><input type="date" id="e${id}_doj" value="${data.doj||''}"/></div>
+      <div><div class="label">Monthly Basic Salary</div><input type="number" id="e${id}_sal" placeholder="15000" value="${data.sal||''}"/></div>
+      <div><div class="label">Exit Date</div><input type="date" id="e${id}_exit" value="${data.exitDate||''}"/></div>
+      <div><div class="label">Opening DBO</div><input type="number" id="e${id}_opendbo" placeholder="optional" value="${data.openingDBO ?? ''}"/></div>
+    </div>`;
+  document.getElementById('empList').appendChild(div);
+}
+
+window.onload = function() {
+  clearEmployees();
+  addEmployee();
+  addEmployee();
+  addEmployee();
+};
+
+function handleExcelUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      if (!rows.length) { alert('Excel file appears empty.'); return; }
+      clearEmployees();
+      rows.forEach(r => {
+        const empid = pick(r, ['Employee ID','EmployeeID','Emp ID','EmpID','ID']);
+        const name = pick(r, ['Name','Employee Name','Full Name']);
+        const dob = toISODate(pick(r, ['DOB','Date of Birth','Birth Date']));
+        const doj = toISODate(pick(r, ['DOJ','Date of Joining','Joining Date','Hire Date']));
+        const sal = parseFloat(String(pick(r, ['Monthly Basic Salary','Basic Salary','Monthly Salary','Salary'])).replace(/,/g,'')) || '';
+        const exitDate = toISODate(pick(r, ['Exit Date','Leaving Date','Last Working Date','LWD','Date of Exit']));
+        const openingDBOraw = pick(r, ['Opening DBO','Opening Defined Benefit Obligation','Opening Liability','Opening Balance']);
+        const openingDBO = openingDBOraw === '' ? '' : (parseFloat(String(openingDBOraw).replace(/,/g,'')) || '');
+        addEmployee({empid, name, dob, doj, sal, exitDate, openingDBO});
+      });
+    } catch (err) {
+      alert('Could not read Excel file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadTemplate() {
+  const data = [
+    ['Employee ID','Name','DOB','DOJ','Monthly Basic Salary','Exit Date','Opening DBO'],
+    ['E001','Employee One','1985-01-15','2015-03-01',20000,'',125000],
+    ['E002','Employee Two','1978-05-20','2010-06-01',30000,'2025-08-15',220000]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:14},{wch:24},{wch:14},{wch:14},{wch:22},{wch:14},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Employee Census');
+  XLSX.writeFile(wb, 'IAS19_EOSB_Employee_Template.xlsx');
+}
+
+function collectEmployees() {
+  const rows = [];
+  document.querySelectorAll('.emp-row').forEach(div => {
+    const id = div.id.replace('emp_','');
+    rows.push({
+      empid: document.getElementById('e'+id+'_empid')?.value.trim() || '',
+      name: document.getElementById('e'+id+'_name')?.value.trim() || '',
+      dob:  document.getElementById('e'+id+'_dob')?.value || '',
+      doj:  document.getElementById('e'+id+'_doj')?.value || '',
+      sal:  parseFloat(document.getElementById('e'+id+'_sal')?.value) || 0,
+      exitDate: document.getElementById('e'+id+'_exit')?.value || '',
+      openingDBO: (() => {
+        const v = document.getElementById('e'+id+'_opendbo')?.value;
+        return v === '' || v === undefined ? null : parseFloat(v);
+      })()
+    });
+  });
+  return rows;
+}
+
+function validate(emps, valDate) {
+  const errs = [];
+  const openDate = priorYearDate(valDate);
+  if (!document.getElementById('companyName').value.trim()) errs.push('Company name is required.');
+  if (!valDate) errs.push('Valuation date is required.');
+  if (emps.length === 0) errs.push('At least one employee is required.');
+  emps.forEach((e,i) => {
+    const n = i+1;
+    if (!e.name) errs.push(`Employee ${n}: Full name is required.`);
+    if (!e.dob)  errs.push(`Employee ${n}: Date of birth is required.`);
+    if (!e.doj)  errs.push(`Employee ${n}: Date of joining is required.`);
+    if (!e.sal || e.sal <= 0) errs.push(`Employee ${n}: Valid monthly basic salary required.`);
+    if (e.dob && e.doj && valDate) {
+      const age = ageAt(e.dob, valDate);
+      const svc = serviceAt(e.doj, valDate);
+      if (age < 15) errs.push(`Employee ${n}: Date of birth seems incorrect (age < 15).`);
+      if (svc < 0) errs.push(`Employee ${n}: Date of joining is after valuation date.`);
+    }
+    if (e.exitDate) {
+      if (e.exitDate < e.doj) errs.push(`Employee ${n}: Exit date is before joining date.`);
+      if (e.exitDate > valDate) errs.push(`Employee ${n}: Exit date is after valuation date. For future expected exits, leave Exit Date blank.`);
+    }
+    if (e.openingDBO !== null && (isNaN(e.openingDBO) || e.openingDBO < 0)) errs.push(`Employee ${n}: Opening DBO must be zero or positive.`);
+  });
+  return errs;
+}
+
+// UAE Labour Law gratuity days: 21 days for each of first five years, 30 days thereafter.
+function uaeGratuityDays(yrs) {
+  if (yrs <= 0) return 0;
+  if (yrs <= 5) return yrs * 21;
+  return (5 * 21) + ((yrs - 5) * 30);
+}
+function uaeBenefit(monthlyBasicSalary, yrs) {
+  const raw = (monthlyBasicSalary / 30) * uaeGratuityDays(yrs);
+  const cap = monthlyBasicSalary * 24;
+  return Math.min(raw, cap);
+}
+function yearsBetween(d1, d2) { return Math.max(serviceAt(d1, d2), 0); }
+function durationYears(fromDate, toDate) { return Math.max((new Date(toDate) - new Date(fromDate))/(1000*60*60*24*365.25), 0); }
+
+// Expected-exit PUC engine for UAE EOSB.
+// Exit Date blank: active employee; expected settlement is earlier of normal retirement and actuarial expected exit from attrition.
+// Exit Date filled: actual leaver; benefits paid are calculated at exit date and closing DBO is nil.
+function pucEmployee(emp, assumptions) {
+  const { dr, sg, att, valDate, retAge } = assumptions;
+  const openDate = priorYearDate(valDate);
+  const age = ageAt(emp.dob, valDate);
+  const svc = Math.max(serviceAt(emp.doj, valDate), 0);
+  const ageOpen = ageAt(emp.dob, openDate);
+  const svcOpen = Math.max(serviceAt(emp.doj, openDate), 0);
+  const salOpen = emp.sal / (1 + sg);
+  const hasOpening = emp.openingDBO !== null && !isNaN(emp.openingDBO);
+  const DBO_open_recomputed = (() => {
+    const ytrOpen = Math.max(retAge - ageOpen, 0);
+    const expectedExitOpen = att > 0 ? Math.min(ytrOpen, 1 / att) : ytrOpen;
+    const fullSvcOpen = svcOpen + expectedExitOpen;
+    const projSalOpen = salOpen * Math.pow(1 + sg, expectedExitOpen);
+    const projBenefitOpen = uaeBenefit(projSalOpen, fullSvcOpen);
+    const ratioOpen = fullSvcOpen > 0 ? Math.min(svcOpen / fullSvcOpen, 1) : 0;
+    const dfOpen = Math.pow(1/(1+dr), expectedExitOpen);
+    return projBenefitOpen * ratioOpen * dfOpen;
+  })();
+  const DBO_open = hasOpening ? emp.openingDBO : DBO_open_recomputed;
+  const openingSource = hasOpening ? 'Excel opening DBO' : 'Recomputed opening DBO';
+
+  let DBO_close=0, CSC=0, IC=0, AGL=0, benefitsPaid=0, projSal=emp.sal, projBenefit=0, expectedExitTerm=0, note='', status='Active';
+
+  if (emp.exitDate) {
+    status = 'Exited';
+    const svcExit = Math.max(serviceAt(emp.doj, emp.exitDate), 0);
+    const monthsFromValToExit = durationYears(openDate, emp.exitDate);
+    const timeFraction = Math.min(Math.max(monthsFromValToExit, 0), 1);
+    benefitsPaid = uaeBenefit(emp.sal, svcExit);
+    DBO_close = 0;
+    const accruedAtOpen = uaeBenefit(salOpen, svcOpen);
+    const accruedAtExit = uaeBenefit(emp.sal, svcExit);
+    CSC = Math.max(accruedAtExit - accruedAtOpen, 0);
+    IC = DBO_open * dr * timeFraction;
+    AGL = DBO_close - DBO_open - CSC - IC + benefitsPaid;
+    projBenefit = benefitsPaid;
+    expectedExitTerm = 0;
+    note = `Exited on ${emp.exitDate}; benefits paid/released calculated at exit date; closing DBO nil.`;
+  } else {
+    const ytr = Math.max(retAge - age, 0);
+    expectedExitTerm = att > 0 ? Math.min(ytr, 1 / att) : ytr;
+    const fullSvc = svc + expectedExitTerm;
+    projSal = emp.sal * Math.pow(1 + sg, expectedExitTerm);
+    projBenefit = uaeBenefit(projSal, fullSvc);
+    const attributionRatio = fullSvc > 0 ? Math.min(svc / fullSvc, 1) : 0;
+    const dfClose = Math.pow(1/(1+dr), expectedExitTerm);
+    DBO_close = projBenefit * attributionRatio * dfClose;
+    CSC = fullSvc > 0 ? (projBenefit / fullSvc) * dfClose : 0;
+    IC = DBO_open * dr;
+    AGL = DBO_close - DBO_open - CSC - IC;
+    if (age >= retAge) note = 'At/above retirement age: obligation treated as immediately payable; no artificial future service.';
+    else if (att > 0 && expectedExitTerm < ytr) note = `Expected-exit term ${expectedExitTerm.toFixed(1)} years based on attrition, earlier than retirement.`;
+    else note = `Expected settlement at retirement in ${expectedExitTerm.toFixed(1)} years.`;
+  }
+
+  const accruedBenefit = uaeBenefit(emp.sal, svc);
+  const capAmount = emp.sal * 24;
+
+  return {
+    empid: emp.empid || '',
+    name: emp.name,
+    status, exitDate: emp.exitDate || '',
+    age: age.toFixed(1),
+    svc: svc.toFixed(1),
+    sal: emp.sal,
+    projSal: projSal.toFixed(0),
+    ytr: expectedExitTerm.toFixed(1),
+    DBO_open, DBO_open_recomputed, openingSource,
+    DBO_close, CSC, IC, AGL, benefitsPaid,
+    accruedBenefit, projBenefit, capAmount, note
+  };
+}
+
+function runPUC(employees, assumptions) {
+  const dr  = parseFloat(assumptions.dr);
+  const sg  = parseFloat(assumptions.sg);
+  const att = parseFloat(assumptions.att);
+  const retAge = parseFloat(assumptions.retAge);
+  const valDate = assumptions.valDate;
+  const a = { dr, sg, att, retAge, valDate };
+  const rows = employees.map(e => pucEmployee(e, a));
+  const sum = (k) => rows.reduce((s,r) => s + (Number(r[k]) || 0), 0);
+  const totals = {
+    DBO_open: sum('DBO_open'),
+    DBO_close: sum('DBO_close'),
+    CSC: sum('CSC'),
+    IC: sum('IC'),
+    benefitsPaid: sum('benefitsPaid'),
+    AGL: sum('AGL'),
+  };
+  const base = totals.DBO_close;
+  function sensitivityDBO(delta_dr=0, delta_sg=0, delta_att=0) {
+    const a2 = { dr: Math.max(dr+delta_dr, 0.0001), sg: sg+delta_sg, att: Math.max(att+delta_att, 0), retAge, valDate };
+    return employees.reduce((s,e) => s + pucEmployee(e,a2).DBO_close, 0);
+  }
+  const sensitivities = [
+    { label:'Discount Rate +1%',  dbo: sensitivityDBO(0.01,0,0) },
+    { label:'Discount Rate -1%',  dbo: sensitivityDBO(-0.01,0,0) },
+    { label:'Salary Growth +1%',  dbo: sensitivityDBO(0,0.01,0) },
+    { label:'Salary Growth -1%',  dbo: sensitivityDBO(0,-0.01,0) },
+    { label:'Attrition +1%',      dbo: sensitivityDBO(0,0,0.01) },
+    { label:'Attrition -1%',      dbo: sensitivityDBO(0,0,-0.01) },
+  ].map(s => ({ label:s.label, dbo:s.dbo, change:s.dbo-base, pct: base ? ((s.dbo-base)/base*100) : 0 }));
+  return { rows, totals, sensitivities, base };
+}
+
+function renderResults(res, meta) {
+  const { totals, rows, sensitivities } = res;
+  const cur = meta.currency;
+  const netCharge = totals.CSC + totals.IC;
+  const activeCount = rows.filter(r => r.status === 'Active').length;
+  const exitedCount = rows.filter(r => r.status === 'Exited').length;
+  const html = `
+  <div class="report-hdr">
+    <div style="font-size:10px;letter-spacing:.25em;color:var(--gold-dim);font-family:'Courier New',monospace;text-transform:uppercase;">Actuarial Valuation Report</div>
+    <div style="font-size:22px;color:var(--gold-light);font-weight:700;margin-top:6px;">IAS 19 — Employee End of Service Benefits</div>
+    <div class="report-meta">
+      ${[['Entity',meta.company],['Valuation Date',meta.valDate],['Currency',cur],['Employees',rows.length],
+         ['Active / Exited',activeCount+' / '+exitedCount],['Discount Rate',meta.discountRate+'%'],['Salary Growth',meta.salaryGrowth+'%'],['Attrition',meta.attrition+'%']
+        ].map(([k,v])=>`<div><div class="meta-key">${k}</div><div class="meta-val">${v}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="sec-hdr"><div class="sec-title">Note X — Defined Benefit Obligation (DBO) Movement</div>
+    <div class="sec-sub">Roll-forward from opening DBO, including benefits paid for employees who exited — IAS 19.140</div></div>
+  <div class="tbl-wrap"><table><thead><tr><th style="text-align:left;">Component</th><th style="text-align:left;">IAS 19 Reference</th><th class="r">${cur}</th></tr></thead><tbody>
+    ${[
+      ['Opening DBO','IAS 19.140(a)', totals.DBO_open, false],
+      ['Current Service Cost','IAS 19.120(a)', totals.CSC, false],
+      ['Interest Cost on DBO','IAS 19.123(b)', totals.IC, false],
+      ['Benefits/Settlements Paid during the period','IAS 19.141(g)', -totals.benefitsPaid, false],
+      ['Actuarial (Gains) / Losses — OCI','IAS 19.127', totals.AGL, false],
+      ['Closing DBO','IAS 19.140', totals.DBO_close, true],
+    ].map(([lbl,para,val,bold])=>`<tr class="${bold?'bold-row':''}"><td>${lbl}</td><td style="color:var(--slate);font-size:11px;">${para}</td><td class="r ${val<0?'neg':''}">${fmtSigned(val)}</td></tr>`).join('')}
+  </tbody></table></div>
+
+  <div class="kpi-grid" style="margin-top:24px;">
+    <div class="card gold-border"><div class="card-title">P&amp;L Charge — IAS 19.120</div>
+      <div class="row-item"><span class="row-key">Current Service Cost</span><span class="row-val">${cur} ${fmt(totals.CSC)}</span></div>
+      <div class="row-item"><span class="row-key">Net Interest Cost</span><span class="row-val">${cur} ${fmt(totals.IC)}</span></div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;"><div class="row-item"><span class="row-key">Total P&amp;L Charge</span><span class="row-val bold">${cur} ${fmt(netCharge)}</span></div></div>
+    </div>
+    <div class="card gold-border"><div class="card-title">Benefits / OCI</div>
+      <div class="row-item"><span class="row-key">Benefits Paid to Leavers</span><span class="row-val">${cur} ${fmt(totals.benefitsPaid)}</span></div>
+      <div class="row-item"><span class="row-key">Actuarial (Gains) / Losses</span><span class="row-val ${totals.AGL<0?'neg':''}">${cur} ${fmtSigned(totals.AGL)}</span></div>
+      <div style="font-size:11px;color:var(--slate);margin-top:14px;font-family:'Courier New',monospace;line-height:1.8;">Remeasurements recognised in OCI; not reclassified to P&amp;L in subsequent periods (IAS 19.122).</div>
+    </div>
+  </div>
+
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Individual Employee Breakdown</div><div class="sec-sub">Exit Date blank = continuing employee. Opening DBO may be imported from prior valuation.</div></div>
+  <div class="tbl-wrap"><table><thead><tr>
+    <th style="text-align:left;">ID</th><th style="text-align:left;">Employee</th><th class="c">Status</th><th class="c">Exit Date</th>
+    <th class="c">Age</th><th class="c">Service<br/>(yrs)</th><th class="r">Current<br/>Salary</th><th class="r">Projected<br/>Salary</th>
+    <th class="c">Expected<br/>Exit Yrs</th><th class="r">Opening<br/>DBO</th><th class="r">Benefits<br/>Paid</th><th class="r">CSC</th><th class="r">Interest</th><th class="r">Act. G/L</th><th class="r">Closing<br/>DBO</th>
+  </tr></thead><tbody>
+    ${rows.map(r=>`<tr>
+      <td>${r.empid}</td><td>${r.name}</td><td class="c">${r.status}</td><td class="c">${r.exitDate || '-'}</td>
+      <td class="c">${r.age}</td><td class="c">${r.svc}</td><td class="r">${fmt(r.sal,0)}</td><td class="r" style="color:var(--slate);">${fmt(r.projSal,0)}</td>
+      <td class="c">${r.ytr}</td><td class="r">${fmt(r.DBO_open)}</td><td class="r">${fmt(r.benefitsPaid)}</td><td class="r">${fmt(r.CSC)}</td><td class="r">${fmt(r.IC)}</td><td class="r ${r.AGL<0?'neg':'pos'}">${fmtSigned(r.AGL)}</td><td class="r" style="color:var(--gold-light);font-weight:700;">${fmt(r.DBO_close)}</td>
+    </tr>`).join('')}
+    <tr class="bold-row"><td>TOTAL</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="r">${fmt(totals.DBO_open)}</td><td class="r">${fmt(totals.benefitsPaid)}</td><td class="r">${fmt(totals.CSC)}</td><td class="r">${fmt(totals.IC)}</td><td class="r">${fmtSigned(totals.AGL)}</td><td class="r">${fmt(totals.DBO_close)}</td></tr>
+  </tbody></table></div>
+  <div class="note-box"><strong style="color:var(--gold);">Computation notes:</strong><br/>${rows.map(r => `${r.empid ? r.empid+' - ' : ''}${r.name}: ${r.openingSource}; accrued statutory benefit ${cur} ${fmt(r.accruedBenefit)}; projected/paid benefit ${cur} ${fmt(r.projBenefit)}; ${r.note}`).join('<br/>')}</div>
+
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Sensitivity Analysis</div><div class="sec-sub">Reasonably possible changes in actuarial assumptions — IAS 19.145</div></div>
+  <div class="tbl-wrap"><table><thead><tr><th style="text-align:left;">Assumption Change</th><th class="r">DBO (${cur})</th><th class="r">Change (${cur})</th><th class="r">Change (%)</th></tr></thead><tbody>
+    ${sensitivities.map(s=>`<tr><td>${s.label}</td><td class="r">${fmt(s.dbo)}</td><td class="r ${s.change<0?'neg':'pos'}">${s.change<0?'('+fmt(Math.abs(s.change))+')':'+'+fmt(s.change)}</td><td class="r ${s.pct<0?'neg':'pos'}">${s.pct<0?'('+Math.abs(s.pct).toFixed(1)+'%)':'+'+s.pct.toFixed(1)+'%'}</td></tr>`).join('')}
+  </tbody></table></div>
+
+  <div class="sec-hdr" style="margin-top:28px;"><div class="sec-title">Financial Statement Disclosure Note</div><div class="sec-sub">Draft note — IAS 19.135–148</div></div>
+  <div class="disclosure">
+    <h3>Note X: Employee End of Service Benefits</h3>
+    <p>The Company operates a defined benefit plan for employees in accordance with UAE Federal Decree-Law No. 33 of 2021 on the Regulation of Labour Relations. The plan provides end-of-service gratuity calculated as 21 days of basic salary for each year of service for the first five years and 30 days of basic salary for each additional year thereafter, subject to a maximum of 24 months' basic salary.</p>
+    <p>The liability recognised in the statement of financial position represents the present value of the defined benefit obligation at the reporting date, determined using the Projected Unit Credit method in accordance with IAS 19 Employee Benefits. For active employees, the expected settlement period is estimated as the earlier of normal retirement age and the expected exit term implied by the attrition assumption. For employees with an Exit Date entered, the benefit is treated as settled at the exit date and the closing DBO is nil.</p>
+    <p>The discount rate is determined by reference to market yields on UAE government bonds at the balance sheet date, as there is no deep market in high-quality corporate bonds in the UAE, consistent with IAS 19.83. Management should retain evidence that the bond term selected is consistent with the estimated duration of the obligation.</p>
+    <p>The total charge to the income statement comprises current service cost of <strong style="color:var(--white);">${cur} ${fmt(totals.CSC)}</strong> and net interest cost of <strong style="color:var(--white);">${cur} ${fmt(totals.IC)}</strong>, totalling <strong style="color:var(--white);">${cur} ${fmt(netCharge)}</strong>. Benefits paid during the year amounted to <strong style="color:var(--white);">${cur} ${fmt(totals.benefitsPaid)}</strong>. Remeasurement ${totals.AGL>=0?'losses':'gains'} of <strong style="color:var(--white);">${cur} ${fmt(Math.abs(totals.AGL))}</strong> have been recognised in other comprehensive income and will not be reclassified to profit or loss.</p>
+  </div>
+
+  <div class="audit-banner"><div class="audit-title">✓ AUDIT COMPLIANCE CHECKLIST — IAS 19</div><div class="audit-grid">
+    <div>✓ Projected Unit Credit method applied (IAS 19.67)</div><div>✓ DBO movement reconciliation incl. benefits paid (IAS 19.140)</div>
+    <div>✓ Current Service Cost disclosed (IAS 19.120(a))</div><div>✓ Interest Cost disclosed separately (IAS 19.123)</div>
+    <div>✓ Remeasurements recognised in OCI (IAS 19.122)</div><div>✓ Sensitivity analysis — 6 scenarios (IAS 19.145)</div>
+    <div>✓ UAE gratuity formula: salary / 30 × days, cap 24 months</div><div>✓ Expected-exit approach applied for UAE EOSB</div>
+  </div></div>
+  <div class="btn-row"><button class="btn-secondary" onclick="goTab('t2')">← Edit Data</button><button class="btn-secondary" onclick="window.print()">🖨 Print</button><button class="btn-secondary" onclick="downloadDetailedWorking()">⬇ Download Excel Working</button><button class="btn-primary" onclick="exportPDF()">⬇ Export PDF Report</button></div>`;
+  document.getElementById('resultsArea').innerHTML = html;
+}
+
+function exportPDF() {
+  if (!lastResult) { alert('Please run a valuation first.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+  const cur      = document.getElementById('currency').value;
+  const company  = document.getElementById('companyName').value;
+  const valDate  = document.getElementById('valuationDate').value;
+  const prepBy   = document.getElementById('preparedBy').value || '-';
+  const dr       = document.getElementById('discountRate').value;
+  const sg       = document.getElementById('salaryGrowth').value;
+  const att      = document.getElementById('attrition').value;
+  const retAge   = document.getElementById('retirementAge').value;
+
+  const { totals, rows, sensitivities } = lastResult;
+  const netCharge = totals.CSC + totals.IC;
+  const activeCount = rows.filter(r => r.status === 'Active').length;
+  const exitedCount = rows.filter(r => r.status === 'Exited').length;
+
+  const W = 297, H = 210, margin = 12;
+  const NAVY   = [13, 27, 42];
+  const NAVY2  = [22, 35, 54];
+  const GOLD   = [201, 168, 76];
+  const WHITE  = [245, 247, 250];
+  const SLATE  = [143, 168, 192];
+  const GREEN  = [76, 175, 130];
+  const DARKTXT = [45, 45, 45];
+  let y = 0;
+
+  function setFont(style='normal', size=9, color=WHITE) {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+  }
+  function fillRect(x, yy, w, h, color) {
+    doc.setFillColor(...color);
+    doc.rect(x, yy, w, h, 'F');
+  }
+  function addPage() { doc.addPage(); y = 12; }
+  function checkPage(needed=20) { if (y + needed > H - 18) addPage(); }
+  function section(title) {
+    checkPage(14);
+    fillRect(margin-1, y, W-margin*2+2, 7, NAVY2);
+    setFont('bold', 10, GOLD);
+    doc.text(title, margin+1, y+5);
+    y += 10;
+  }
+
+  // COVER / HEADER — restored professional header layout
+  fillRect(0, 0, W, 34, NAVY);
+  fillRect(0, 34, W, 1.5, GOLD);
+  setFont('normal', 7, SLATE);
+  doc.text('IAS 19 EMPLOYEE BENEFITS  |  UAE GRATUITY  |  PROJECTED UNIT CREDIT / EXPECTED-EXIT METHOD', margin, 9);
+  setFont('bold', 17, GOLD);
+  doc.text('Actuarial Valuation Report', margin, 19);
+  setFont('normal', 9.5, WHITE);
+  doc.text('Employee End of Service Benefits', margin, 27);
+  setFont('normal', 7.5, SLATE);
+  doc.text('UAE Federal Decree-Law No. 33 of 2021  |  IFRS / IAS 19 Compliant', W - margin, 27, {align:'right'});
+
+  y = 42;
+  const metaItems = [
+    ['ENTITY', company], ['VALUATION DATE', valDate], ['CURRENCY', cur], ['EMPLOYEES', String(rows.length)],
+    ['ACTIVE / EXITED', activeCount + ' / ' + exitedCount], ['DISCOUNT RATE', dr + '%'], ['SALARY GROWTH', sg + '%'], ['ATTRITION', att + '%'], ['PREPARED BY', prepBy]
+  ];
+  const metaW = (W - margin*2) / 3;
+  metaItems.forEach((item, i) => {
+    const x = margin + (i % 3) * metaW;
+    const yy = y + Math.floor(i / 3) * 10;
+    setFont('normal', 6.5, SLATE); doc.text(item[0], x, yy);
+    setFont('bold', 8.5, DARKTXT); doc.text(String(item[1]), x, yy + 4);
+  });
+  y += 35;
+
+  // SECTION 1 — DBO movement
+  section('1. DEFINED BENEFIT OBLIGATION — MOVEMENT');
+  setFont('normal', 7.5, DARKTXT);
+  doc.text('Reconciliation of opening and closing balances in accordance with IAS 19.140, including benefits paid for employees who exited during the year.', margin, y);
+  y += 5;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Component', 'IAS 19 Reference', cur]],
+    body: [
+      ['Opening Defined Benefit Obligation', 'IAS 19.140(a)', fmt(totals.DBO_open)],
+      ['Current Service Cost', 'IAS 19.120(a)', fmt(totals.CSC)],
+      ['Interest Cost on DBO', 'IAS 19.123(b)', fmt(totals.IC)],
+      ['Benefits/settlements Paid during the period', 'IAS 19.141(g)', fmtSigned(-totals.benefitsPaid)],
+      ['Actuarial (Gains) / Losses — OCI', 'IAS 19.127', fmtSigned(totals.AGL)],
+      ['Closing Defined Benefit Obligation', 'IAS 19.140', fmt(totals.DBO_close)],
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8, textColor: DARKTXT },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    didParseCell(data) {
+      if (data.row.index === 5) {
+        data.cell.styles.fillColor = [240, 232, 205];
+        data.cell.styles.textColor = [90, 65, 15];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.section === 'body' && data.column.index === 2) data.cell.styles.halign = 'right';
+      if (data.section === 'head' && data.column.index === 2) data.cell.styles.halign = 'right';
+    },
+    columnStyles: { 0:{cellWidth:120}, 1:{cellWidth:70}, 2:{cellWidth:55} },
+  });
+  y = doc.lastAutoTable.finalY + 7;
+
+  // Restored Section 1 P&L and OCI boxes
+  checkPage(28);
+  const boxW = (W - margin*2 - 8) / 2;
+  const boxH = 24;
+  fillRect(margin, y, boxW, boxH, NAVY2);
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.35); doc.rect(margin, y, boxW, boxH);
+  setFont('bold', 7.5, GOLD); doc.text('P&L CHARGE  (IAS 19.120)', margin+3, y+5);
+  setFont('normal', 7.5, WHITE);
+  doc.text('Current Service Cost', margin+3, y+11);
+  doc.text('Net Interest Cost', margin+3, y+16);
+  doc.text(cur + ' ' + fmt(totals.CSC), margin+boxW-3, y+11, {align:'right'});
+  doc.text(cur + ' ' + fmt(totals.IC), margin+boxW-3, y+16, {align:'right'});
+  doc.setDrawColor(...GOLD); doc.line(margin+3, y+18.5, margin+boxW-3, y+18.5);
+  setFont('bold', 8, GOLD);
+  doc.text('Total Charge', margin+3, y+22.5);
+  doc.text(cur + ' ' + fmt(netCharge), margin+boxW-3, y+22.5, {align:'right'});
+
+  const box2x = margin + boxW + 8;
+  fillRect(box2x, y, boxW, boxH, NAVY2);
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.35); doc.rect(box2x, y, boxW, boxH);
+  setFont('bold', 7.5, GOLD); doc.text('OTHER COMPREHENSIVE INCOME  (IAS 19.127)', box2x+3, y+5);
+  setFont('normal', 7.5, WHITE);
+  doc.text('Actuarial (Gains) / Losses', box2x+3, y+11);
+  doc.text(cur + ' ' + fmtSigned(totals.AGL), box2x+boxW-3, y+11, {align:'right'});
+  setFont('normal', 7, SLATE);
+  doc.text('Remeasurements recognised in OCI and not reclassified to P&L in subsequent periods.', box2x+3, y+18, {maxWidth: boxW-6});
+  y += boxH + 8;
+
+  // SECTION 2 — Individual breakdown
+  section('2. INDIVIDUAL EMPLOYEE BREAKDOWN — ACTUARIAL WORKING PAPERS');
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['ID','Employee','Status','Exit Date','Age','Service','Salary','Exp. Exit Yrs','Opening DBO','Benefits Paid','CSC','Interest','Act. G/L','Closing DBO']],
+    body: [
+      ...rows.map(r => [r.empid, r.name, r.status, r.exitDate || '-', r.age, r.svc, fmt(r.sal,0), r.ytr, fmt(r.DBO_open), fmt(r.benefitsPaid), fmt(r.CSC), fmt(r.IC), fmtSigned(r.AGL), fmt(r.DBO_close)]),
+      ['TOTAL','','','','','','','', fmt(totals.DBO_open), fmt(totals.benefitsPaid), fmt(totals.CSC), fmt(totals.IC), fmtSigned(totals.AGL), fmt(totals.DBO_close)]
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle:'bold', fontSize:6.8 },
+    bodyStyles: { fontSize:6.7, textColor:DARKTXT },
+    alternateRowStyles: { fillColor:[247,247,247] },
+    styles: { cellPadding:1.25 },
+    didParseCell(data) {
+      const lastRow = rows.length;
+      if (data.section === 'body' && data.row.index === lastRow) {
+        data.cell.styles.fillColor = [240, 232, 205];
+        data.cell.styles.textColor = [90, 65, 15];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.section === 'body' && data.column.index >= 8) data.cell.styles.halign = 'right';
+    },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // SECTION 3 — Sensitivity
+  section('3. SENSITIVITY ANALYSIS  (IAS 19.145)');
+  setFont('normal', 7.5, DARKTXT);
+  doc.text('Each scenario changes one assumption independently, holding all others constant — IAS 19.145(a).', margin, y);
+  y += 5;
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Assumption Change', `DBO (${cur})`, `Change (${cur})`, 'Change (%)']],
+    body: sensitivities.map(s => [
+      s.label,
+      fmt(s.dbo),
+      s.change < 0 ? '(' + fmt(Math.abs(s.change)) + ')' : '+' + fmt(s.change),
+      s.pct < 0 ? '(' + Math.abs(s.pct).toFixed(1) + '%)' : '+' + s.pct.toFixed(1) + '%'
+    ]),
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle:'bold', fontSize:8 },
+    bodyStyles: { fontSize:8, textColor:DARKTXT },
+    alternateRowStyles: { fillColor:[247,247,247] },
+    columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'} },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // SECTION 4 — Disclosure
+  section('4. FINANCIAL STATEMENT DISCLOSURE NOTE  (IAS 19.135–148)');
+  setFont('bold', 9, DARKTXT); doc.text('Note X: Employee End of Service Benefits', margin, y); y += 5;
+  setFont('normal', 7.5, DARKTXT);
+  const disclosureParas = [
+    `The Company operates a defined benefit plan for employees in accordance with UAE Federal Decree-Law No. 33 of 2021 on the Regulation of Labour Relations. The plan provides end-of-service gratuity calculated as 21 days of basic salary for each year of service for the first five years and 30 days of basic salary for each additional year thereafter, subject to a maximum of 24 months' basic salary.`,
+    `The liability recognised in the statement of financial position represents the present value of the defined benefit obligation at the reporting date, determined using the Projected Unit Credit method in accordance with IAS 19 Employee Benefits. For active employees, the expected settlement period is estimated as the earlier of normal retirement age and the expected exit term implied by the attrition assumption. For employees with an Exit Date entered, the benefit is treated as settled at the exit date and the closing DBO is nil.`,
+    `The discount rate is determined by reference to market yields on UAE government bonds at the balance sheet date, as there is no deep market in high-quality corporate bonds in the UAE, consistent with IAS 19.83. Management should retain evidence that the bond term selected is consistent with the estimated duration of the obligation.`,
+    `The total charge to the income statement comprises current service cost of ${cur} ${fmt(totals.CSC)} and net interest cost of ${cur} ${fmt(totals.IC)}, totalling ${cur} ${fmt(netCharge)}. Benefits paid during the year amounted to ${cur} ${fmt(totals.benefitsPaid)}. Remeasurement ${totals.AGL>=0?'losses':'gains'} of ${cur} ${fmt(Math.abs(totals.AGL))} have been recognised in other comprehensive income and will not be reclassified to profit or loss in subsequent periods.`
+  ];
+  for (const para of disclosureParas) {
+    checkPage(14);
+    const lines = doc.splitTextToSize(para, W - margin*2);
+    doc.text(lines, margin, y);
+    y += lines.length * 3.6 + 2.5;
+  }
+
+  // Restored Section 4 assumptions table
+  checkPage(34);
+  setFont('bold', 8.5, DARKTXT); doc.text('Principal Actuarial Assumptions:', margin, y); y += 4;
+  const avgExpectedExit = rows.length ? rows.reduce((s,r)=>s + (Number(r.ytr)||0),0) / rows.length : 0;
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Assumption', 'Rate / Basis']],
+    body: [
+      ['Discount Rate', dr + '% per annum'],
+      ['Salary Escalation Rate', sg + '% per annum'],
+      ['Attrition / Withdrawal Rate', att + '% per annum'],
+      ['Expected Exit Period', 'Earlier of retirement age and attrition-implied expected exit term; average ' + avgExpectedExit.toFixed(1) + ' years'],
+      ['Normal Retirement Age', retAge + ' years (upper limit / disclosure basis)'],
+      ['UAE Benefit Formula', 'Monthly basic salary / 30 x statutory gratuity days, capped at 24 months basic salary'],
+    ],
+    headStyles: { fillColor: NAVY, textColor: GOLD, fontStyle:'bold', fontSize:8 },
+    bodyStyles: { fontSize:8, textColor:DARKTXT },
+    alternateRowStyles: { fillColor:[247,247,247] },
+    columnStyles: { 0:{cellWidth:70}, 1:{cellWidth:190} },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // SECTION 5 — Audit compliance checklist restored with original-style formatting
+  section('5. AUDIT COMPLIANCE CHECKLIST');
+  const checks = [
+    ['IAS 19.67',  'Projected Unit Credit method applied'],
+    ['IAS 19.140', 'DBO movement reconciliation prepared'],
+    ['IAS 19.120', 'Current Service Cost separately disclosed'],
+    ['IAS 19.123', 'Interest Cost separately disclosed'],
+    ['IAS 19.127', 'OCI remeasurement disclosed'],
+    ['IAS 19.145', 'Sensitivity analysis prepared'],
+    ['IAS 19.144', 'Actuarial assumptions disclosed'],
+    ['IAS 19.83',  'Discount rate basis disclosed'],
+    ['Art. 51',    'UAE gratuity formula applied'],
+    ['IAS 19.135', 'Draft financial statement disclosure note prepared'],
+    ['Roll-forward', 'Opening DBO roll-forward performed'],
+    ['Exit handling', 'Employee exits during the year reflected through benefits paid'],
+  ];
+  const checkBody = [];
+  for (let i = 0; i < checks.length; i += 2) {
+    const left = checks[i];
+    const right = checks[i+1] || ['', ''];
+    checkBody.push(['', left[0], left[1], '', right[0], right[1]]);
+  }
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin + 3, right: margin + 3 },
+    body: checkBody,
+    theme: 'plain',
+    styles: { fontSize:7.5, textColor:DARKTXT, cellPadding:{top:2.4,right:1.5,bottom:2.4,left:1.5}, overflow:'linebreak' },
+    columnStyles: {
+      0:{cellWidth:7}, 1:{cellWidth:28, fontStyle:'bold', textColor:DARKTXT}, 2:{cellWidth:92, textColor:DARKTXT},
+      3:{cellWidth:7}, 4:{cellWidth:28, fontStyle:'bold', textColor:DARKTXT}, 5:{cellWidth:92, textColor:DARKTXT},
+    },
+    didDrawCell(data) {
+      if (data.section === 'body' && (data.column.index === 0 || data.column.index === 3)) {
+        const raw = data.row.raw;
+        const hasItem = data.column.index === 0 ? raw[1] : raw[4];
+        if (hasItem) {
+          doc.setFillColor(...GOLD);
+          doc.circle(data.cell.x + 3.5, data.cell.y + data.cell.height / 2, 1.8, 'F');
+        }
+      }
+    },
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  // Footer on every page
+  const pageCount = doc.getNumberOfPages();
+  for (let pg = 1; pg <= pageCount; pg++) {
+    doc.setPage(pg);
+    fillRect(0, H-8, W, 8, NAVY);
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.25);
+    doc.line(margin, H-8, W-margin, H-8);
+    setFont('normal', 7, SLATE);
+    doc.text(`${company} | IAS 19 EOSB Valuation | ${valDate}`, margin, H-3);
+    doc.text(`Page ${pg} of ${pageCount} | Prepared by: ${prepBy}`, W-margin, H-3, {align:'right'});
+  }
+
+  doc.save(`IAS19_EOSB_Valuation_${company.replace(/\s+/g,'_')}_${valDate}.pdf`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EXCEL EXPORT — Detailed working file matching PDF output
+// ══════════════════════════════════════════════════════════════════
+function downloadDetailedWorking() {
+  if (!lastResult) { alert('Please run a valuation first.'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excel library is not loaded.'); return; }
+
+  const cur      = document.getElementById('currency').value;
+  const company  = document.getElementById('companyName').value || 'Company';
+  const valDate  = document.getElementById('valuationDate').value;
+  const prepBy   = document.getElementById('preparedBy').value || '—';
+  const dr       = (parseFloat(document.getElementById('discountRate').value) || 0) / 100;
+  const sg       = (parseFloat(document.getElementById('salaryGrowth').value) || 0) / 100;
+  const att      = (parseFloat(document.getElementById('attrition').value) || 0) / 100;
+  const retAge   = parseFloat(document.getElementById('retirementAge').value) || 60;
+  const employees = collectEmployees();
+  const n = employees.length;
+  if (!n) { alert('No employee data available.'); return; }
+
+  const firstEmpRow = 14;
+  const firstWorkRow = 4;
+  const lastWorkRow = firstWorkRow + n - 1;
+  const f = formula => ({ f: formula });
+  const d = s => {
+    if (!s) return '';
+    const parts = String(s).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return s;
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  };
+  const pctFmt = '0.00%';
+  const amtFmt = '#,##0.00';
+  const dateFmt = 'yyyy-mm-dd';
+
+  function setCols(ws, widths) { ws['!cols'] = widths.map(w => ({ wch: w })); }
+  function setRangeDates(ws, refs) { refs.forEach(ref => { if (ws[ref] && ws[ref].v instanceof Date) ws[ref].z = dateFmt; }); }
+  function addSheet(wb, name, aoa, cols) {
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    if (cols) setCols(ws, cols);
+    XLSX.utils.book_append_sheet(wb, ws, name);
+    return ws;
+  }
+
+  const wb = XLSX.utils.book_new();
+  wb.Props = { Title:'IAS 19 UAE EOSB Detailed Calculation Working', Subject:'IAS 19 EOSB', Author:prepBy, CreatedDate:new Date() };
+
+  // 1) Inputs sheet
+  const inputRows = [
+    ['IAS 19 UAE EOSB - Detailed Calculation Working'],
+    [],
+    ['Company', company],
+    ['Valuation Date', d(valDate)],
+    ['Currency', cur],
+    ['Discount Rate', dr],
+    ['Salary Growth Rate', sg],
+    ['Attrition / Withdrawal Rate', att],
+    ['Normal Retirement Age', retAge],
+    ['Prepared By', prepBy],
+    ['Opening Date', f('DATE(YEAR($B$4)-1,MONTH($B$4),DAY($B$4))')],
+    [],
+    ['Employee ID','Name','DOB','DOJ','Monthly Basic Salary','Exit Date','Opening DBO']
+  ];
+  employees.forEach(e => inputRows.push([e.empid || '', e.name || '', d(e.dob), d(e.doj), e.sal || 0, d(e.exitDate), e.openingDBO === null || isNaN(e.openingDBO) ? '' : e.openingDBO]));
+  const wsInputs = addSheet(wb, 'Inputs', inputRows, [16,26,14,14,22,14,16]);
+  ['B4'].forEach(ref => { if (wsInputs[ref]) wsInputs[ref].z = dateFmt; });
+  ['B6','B7','B8'].forEach(ref => { if (wsInputs[ref]) wsInputs[ref].z = pctFmt; });
+  for (let r=firstEmpRow; r<firstEmpRow+n; r++) ['C','D','F'].forEach(c => { if (wsInputs[c+r]) wsInputs[c+r].z = dateFmt; });
+  for (let r=firstEmpRow; r<firstEmpRow+n; r++) ['E','G'].forEach(c => { if (wsInputs[c+r]) wsInputs[c+r].z = amtFmt; });
+
+  // 2) Employee working sheet
+  const ewHeaders = ['Employee ID','Employee','Status','Exit Date','DOB','DOJ','Monthly Salary','Opening DBO Input','Valuation Date','Opening Date','Discount Rate','Salary Growth','Attrition','Retirement Age','Age at Valuation','Service at Valuation','Age at Opening','Service at Opening','Salary at Opening','Has Opening DBO','YTR at Opening','Expected Exit Term at Opening','Full Service at Opening','Projected Salary at Opening','Gratuity Days at Opening','Projected Benefit at Opening','Opening Attribution Ratio','Opening Discount Factor','Recomputed Opening DBO','Opening DBO Used','Opening Source','Service at Exit','Time Fraction','YTR at Valuation','Expected Exit Term','Full Service at Expected/Actual Exit','Projected/Exit Salary','Gratuity Days at Expected/Actual Exit','Projected/Actual Benefit','Closing Attribution Ratio','Closing Discount Factor','Closing DBO','Benefits Paid','Accrued Benefit at Opening','Current Service Cost','Interest Cost','Actuarial G/L','Accrued Benefit at Valuation','Cap Amount','Note'];
+  const ew = [['Employee-level actuarial working - formulas visible in formula bar'], [], ewHeaders];
+  for (let i=0; i<n; i++) {
+    const r = firstWorkRow + i;
+    const ir = firstEmpRow + i;
+    ew.push([
+      f(`Inputs!A${ir}`), f(`Inputs!B${ir}`), f(`IF(Inputs!F${ir}="","Active","Exited")`), f(`Inputs!F${ir}`), f(`Inputs!C${ir}`), f(`Inputs!D${ir}`), f(`Inputs!E${ir}`), f(`Inputs!G${ir}`), f('Inputs!$B$4'), f('Inputs!$B$11'), f('Inputs!$B$6'), f('Inputs!$B$7'), f('Inputs!$B$8'), f('Inputs!$B$9'),
+      f(`(I${r}-E${r})/365.25`), f(`MAX((I${r}-F${r})/365.25,0)`), f(`(J${r}-E${r})/365.25`), f(`MAX((J${r}-F${r})/365.25,0)`), f(`G${r}/(1+L${r})`), f(`H${r}<>""`), f(`MAX(N${r}-Q${r},0)`), f(`IF(M${r}>0,MIN(U${r},1/M${r}),U${r})`), f(`R${r}+V${r}`), f(`S${r}*(1+L${r})^V${r}`), f(`IF(W${r}<=0,0,IF(W${r}<=5,W${r}*21,5*21+(W${r}-5)*30))`), f(`MIN(X${r}/30*Y${r},X${r}*24)`), f(`IF(W${r}>0,MIN(R${r}/W${r},1),0)`), f(`(1/(1+K${r}))^V${r}`), f(`Z${r}*AA${r}*AB${r}`), f(`IF(T${r},H${r},AC${r})`), f(`IF(T${r},"Excel opening DBO","Recomputed opening DBO")`),
+      f(`IF(C${r}="Exited",MAX((D${r}-F${r})/365.25,0),"")`), f(`IF(C${r}="Exited",MIN(MAX((D${r}-J${r})/365.25,0),1),0)`), f(`MAX(N${r}-O${r},0)`), f(`IF(C${r}="Exited",0,IF(M${r}>0,MIN(AH${r},1/M${r}),AH${r}))`), f(`IF(C${r}="Exited",AF${r},P${r}+AI${r})`), f(`IF(C${r}="Exited",G${r},G${r}*(1+L${r})^AI${r})`), f(`IF(AJ${r}<=0,0,IF(AJ${r}<=5,AJ${r}*21,5*21+(AJ${r}-5)*30))`), f(`MIN(AK${r}/30*AL${r},AK${r}*24)`), f(`IF(C${r}="Exited",1,IF(AJ${r}>0,MIN(P${r}/AJ${r},1),0))`), f(`IF(C${r}="Exited",1,(1/(1+K${r}))^AI${r})`), f(`IF(C${r}="Exited",0,AM${r}*AN${r}*AO${r})`), f(`IF(C${r}="Exited",AM${r},0)`), f(`MIN(S${r}/30*IF(R${r}<=0,0,IF(R${r}<=5,R${r}*21,5*21+(R${r}-5)*30)),S${r}*24)`), f(`IF(C${r}="Exited",MAX(AM${r}-AR${r},0),IF(AJ${r}>0,(AM${r}/AJ${r})*AO${r},0))`), f(`IF(C${r}="Exited",AD${r}*K${r}*AG${r},AD${r}*K${r})`), f(`IF(C${r}="Exited",AP${r}-AD${r}-AS${r}-AT${r}+AQ${r},AP${r}-AD${r}-AS${r}-AT${r})`), f(`MIN(G${r}/30*IF(P${r}<=0,0,IF(P${r}<=5,P${r}*21,5*21+(P${r}-5)*30)),G${r}*24)`), f(`G${r}*24`), f(`IF(C${r}="Exited","Exited: benefit paid at exit date and closing DBO nil",IF(AI${r}<AH${r},"Active: expected-exit term based on attrition","Active: expected settlement at retirement"))`)
+    ]);
+  }
+  ew.push([]);
+  ew.push(['TOTAL','','','','','','', f(`SUM(H${firstWorkRow}:H${lastWorkRow})`),'','','','','','','','','','','','','','','','','','','','','',f(`SUM(AD${firstWorkRow}:AD${lastWorkRow})`),'','','','','','','','','','','',f(`SUM(AP${firstWorkRow}:AP${lastWorkRow})`),f(`SUM(AQ${firstWorkRow}:AQ${lastWorkRow})`),'',f(`SUM(AS${firstWorkRow}:AS${lastWorkRow})`),f(`SUM(AT${firstWorkRow}:AT${lastWorkRow})`),f(`SUM(AU${firstWorkRow}:AU${lastWorkRow})`),'','']);
+  const wsEW = addSheet(wb, 'Employee_Working', ew, [14,22,10,14,14,14,16,18,14,14,12,12,12,12,14,16,14,16,16,14,14,18,18,20,18,20,18,18,20,18,22,16,14,16,18,20,18,24,20,20,18,16,16,18,18,14,16,20,14,40]);
+
+  // 3) DBO Movement sheet
+  const end = lastWorkRow;
+  const dbo = [
+    ['DBO Movement, P&L and OCI Reconciliation'], [],
+    ['Component','IAS 19 Reference',cur,'','P&L Charge (IAS 19.120)',cur],
+    ['Opening Defined Benefit Obligation','IAS 19.140(a)',f(`SUM(Employee_Working!AD${firstWorkRow}:AD${end})`),'','Current Service Cost',f('C5')],
+    ['Current Service Cost','IAS 19.120(a)',f(`SUM(Employee_Working!AS${firstWorkRow}:AS${end})`),'','Net Interest Cost',f('C6')],
+    ['Interest Cost on DBO','IAS 19.123(b)',f(`SUM(Employee_Working!AT${firstWorkRow}:AT${end})`),'','Total P&L Charge',f('SUM(F4:F5)')],
+    ['Benefits/Settlements Paid during the period','IAS 19.141(g)',f(`-SUM(Employee_Working!AQ${firstWorkRow}:AQ${end})`) ],
+    ['Actuarial (Gains) / Losses - OCI','IAS 19.127',f(`SUM(Employee_Working!AU${firstWorkRow}:AU${end})`),'','Other Comprehensive Income (IAS 19.127)',cur],
+    ['Closing Defined Benefit Obligation','IAS 19.140',f(`SUM(Employee_Working!AP${firstWorkRow}:AP${end})`),'','Actuarial (Gains) / Losses',f('C8')],
+    ['','','','','Check: Opening+CSC+Interest-Benefits+AGL=Closing',f('C4+C5+C6+C7+C8-C9')]
+  ];
+  addSheet(wb, 'DBO_Movement', dbo, [44,18,16,4,48,16]);
+
+  // 4) Sensitivity sheet
+  const sensHeaders = ['Scenario','Employee ID','Employee','Status','Discount Rate','Salary Growth','Attrition','Age','Service','YTR','Expected Exit Term','Full Service','Projected Salary','Gratuity Days','Projected Benefit','Attribution Ratio','Discount Factor','Closing DBO','','Scenario','Total DBO','Change vs Base','Change %'];
+  const sens = [['Sensitivity analysis - detailed reconstruction'], [], sensHeaders];
+  const scenarios = [
+    ['Base',0,0,0], ['Discount Rate +1%',0.01,0,0], ['Discount Rate -1%',-0.01,0,0], ['Salary Growth +1%',0,0.01,0], ['Salary Growth -1%',0,-0.01,0], ['Attrition +1%',0,0,0.01], ['Attrition -1%',0,0,-0.01]
+  ];
+  scenarios.forEach(sc => {
+    for (let i=0; i<n; i++) {
+      const er = firstWorkRow + i;
+      const rr = 4 + sens.length - 3;
+      sens.push([sc[0], f(`Employee_Working!A${er}`), f(`Employee_Working!B${er}`), f(`Employee_Working!C${er}`), f(`MAX(Inputs!$B$6+${sc[1]},0.0001)`), f(`Inputs!$B$7+${sc[2]}`), f(`MAX(Inputs!$B$8+${sc[3]},0)`), f(`Employee_Working!O${er}`), f(`Employee_Working!P${er}`), f(`MAX(Inputs!$B$9-H${rr},0)`), f(`IF(D${rr}="Exited",0,IF(G${rr}>0,MIN(J${rr},1/G${rr}),J${rr}))`), f(`IF(D${rr}="Exited",Employee_Working!AF${er},I${rr}+K${rr})`), f(`IF(D${rr}="Exited",Employee_Working!G${er},Employee_Working!G${er}*(1+F${rr})^K${rr})`), f(`IF(L${rr}<=0,0,IF(L${rr}<=5,L${rr}*21,5*21+(L${rr}-5)*30))`), f(`MIN(M${rr}/30*N${rr},M${rr}*24)`), f(`IF(D${rr}="Exited",1,IF(L${rr}>0,MIN(I${rr}/L${rr},1),0))`), f(`IF(D${rr}="Exited",1,(1/(1+E${rr}))^K${rr})`), f(`IF(D${rr}="Exited",0,O${rr}*P${rr}*Q${rr})`)]);
+    }
+  });
+  const summaryStart = 4;
+  const summaryEnd = summaryStart + scenarios.length*n - 1;
+  for (let i=0; i<scenarios.length; i++) {
+    const row = 4 + i;
+    if (!sens[row-1]) sens[row-1] = [];
+    sens[row-1][19] = scenarios[i][0];
+    sens[row-1][20] = f(`SUMIF($A$${summaryStart}:$A$${summaryEnd},T${row},$R$${summaryStart}:$R$${summaryEnd})`);
+    sens[row-1][21] = f(`U${row}-$U$4`);
+    sens[row-1][22] = f(`IF($U$4=0,0,V${row}/$U$4)`);
+  }
+  addSheet(wb, 'Sensitivity', sens, [20,14,22,10,14,14,12,12,12,12,18,14,16,16,18,18,16,18,4,20,16,16,12]);
+
+  // 5) Formula map
+  const fmap = [
+    ['Area','Formula / Explanation'],
+    ['UAE gratuity days','If service <= 5: service x 21; else 105 + (service - 5) x 30'],
+    ['UAE benefit cap','MIN(monthly basic salary / 30 x gratuity days, monthly basic salary x 24)'],
+    ['Expected exit term - active employees','Earlier of years to retirement and 1 / attrition rate'],
+    ['Opening DBO source','Uses Excel Opening DBO if provided; otherwise recomputes opening DBO using prior-year date and salary implied by salary growth'],
+    ['Active employee closing DBO','Projected benefit x attribution ratio x discount factor'],
+    ['Attribution ratio','Service at valuation / full service to expected exit, capped at 1'],
+    ['Discount factor','(1 / (1 + discount rate)) ^ expected exit term'],
+    ['Active current service cost','Projected benefit / full service x discount factor'],
+    ['Exited employee benefits paid','UAE benefit calculated at actual exit date'],
+    ['Exited employee current service cost','MAX(actual benefit at exit - accrued benefit at opening, 0)'],
+    ['Exited employee interest cost','Opening DBO x discount rate x fraction of year to exit'],
+    ['Actuarial gain/loss - active','Closing DBO - Opening DBO - Current Service Cost - Interest Cost'],
+    ['Actuarial gain/loss - exited','Closing DBO - Opening DBO - Current Service Cost - Interest Cost + Benefits Paid'],
+    ['DBO movement check','Opening DBO + Current Service Cost + Interest Cost - Benefits Paid + Actuarial G/L = Closing DBO']
+  ];
+  addSheet(wb, 'Formula_Map', fmap, [34,110]);
+
+  // Excel cell formatting only — dates, percentages, numbers and currency alignment
+  // This does not change any calculations or workbook structure.
+  const numFmt = '0.00';
+  const intFmt = '#,##0';
+  const ratioFmt = '0.00%';
+  const dfFmt = '0.000000';
+  const textAlign = 'left';
+  const numAlign = 'right';
+  const centerAlign = 'center';
+
+  function applyCellFormat(ws, ref, z, align) {
+    if (!ws || !ws[ref]) return;
+    ws[ref].z = z;
+    ws[ref].s = Object.assign({}, ws[ref].s || {}, {
+      alignment: { horizontal: align || numAlign, vertical: 'center' }
+    });
+  }
+  function applyRangeFormat(ws, cols, r1, r2, z, align) {
+    for (let r = r1; r <= r2; r++) {
+      cols.forEach(c => applyCellFormat(ws, `${c}${r}`, z, align));
+    }
+  }
+  function applyHeaderFormat(ws, row, cols) {
+    cols.forEach(c => {
+      if (!ws || !ws[`${c}${row}`]) return;
+      ws[`${c}${row}`].s = Object.assign({}, ws[`${c}${row}`].s || {}, {
+        font: { bold: true },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+      });
+    });
+  }
+
+  // Inputs
+  applyCellFormat(wsInputs, 'B4', dateFmt, numAlign);
+  applyCellFormat(wsInputs, 'B11', dateFmt, numAlign);
+  ['B6','B7','B8'].forEach(ref => applyCellFormat(wsInputs, ref, ratioFmt, numAlign));
+  applyCellFormat(wsInputs, 'B9', numFmt, numAlign);
+  applyHeaderFormat(wsInputs, 13, ['A','B','C','D','E','F','G']);
+  applyRangeFormat(wsInputs, ['C','D','F'], firstEmpRow, firstEmpRow+n-1, dateFmt, numAlign);
+  applyRangeFormat(wsInputs, ['E','G'], firstEmpRow, firstEmpRow+n-1, amtFmt, numAlign);
+
+  // Employee working
+  applyHeaderFormat(wsEW, 3, ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ','AR','AS','AT','AU','AV','AW','AX']);
+  applyRangeFormat(wsEW, ['D','E','F','I','J'], firstWorkRow, lastWorkRow, dateFmt, numAlign);
+  applyRangeFormat(wsEW, ['K','L','M','AA','AB','AN','AO'], firstWorkRow, lastWorkRow, ratioFmt, numAlign);
+  applyRangeFormat(wsEW, ['O','P','Q','R','U','V','W','Y','AF','AG','AH','AI','AJ','AL'], firstWorkRow, lastWorkRow, numFmt, numAlign);
+  applyRangeFormat(wsEW, ['G','H','S','X','Z','AC','AD','AK','AM','AP','AQ','AR','AS','AT','AU','AV','AW'], firstWorkRow, lastWorkRow, amtFmt, numAlign);
+  applyRangeFormat(wsEW, ['A','B','C','AE','AX'], firstWorkRow, lastWorkRow, '@', textAlign);
+  const totalEWRow = lastWorkRow + 2;
+  applyRangeFormat(wsEW, ['H','AD','AP','AQ','AS','AT','AU'], totalEWRow, totalEWRow, amtFmt, numAlign);
+
+  // DBO Movement / P&L / OCI
+  const wsDBO = wb.Sheets['DBO_Movement'];
+  applyHeaderFormat(wsDBO, 3, ['A','B','C','E','F']);
+  applyRangeFormat(wsDBO, ['C','F'], 4, 10, amtFmt, numAlign);
+  applyRangeFormat(wsDBO, ['A','B','E'], 4, 10, '@', textAlign);
+
+  // Sensitivity
+  const wsSens = wb.Sheets['Sensitivity'];
+  applyHeaderFormat(wsSens, 3, ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','T','U','V','W']);
+  applyRangeFormat(wsSens, ['E','F','G','P','W'], 4, summaryEnd, ratioFmt, numAlign);
+  applyRangeFormat(wsSens, ['Q'], 4, summaryEnd, dfFmt, numAlign);
+  applyRangeFormat(wsSens, ['H','I','J','K','L','N'], 4, summaryEnd, numFmt, numAlign);
+  applyRangeFormat(wsSens, ['M','O','R','U','V'], 4, summaryEnd, amtFmt, numAlign);
+  applyRangeFormat(wsSens, ['A','B','C','D','T'], 4, summaryEnd, '@', textAlign);
+
+  // Formula map
+  const wsMap = wb.Sheets['Formula_Map'];
+  applyHeaderFormat(wsMap, 1, ['A','B']);
+  applyRangeFormat(wsMap, ['A','B'], 2, fmap.length, '@', textAlign);
+
+  const filename = `IAS19_EOSB_Detailed_Working_${company.replace(/\s+/g,'_')}_${valDate}.xlsx`;
+  XLSX.writeFile(wb, filename, { bookType:'xlsx', cellDates:true, cellStyles:true });
+}
+
+</script>
+
+<script>
+const LEAD_CAPTURE_URL = "https://script.google.com/macros/s/AKfycbyEfpaq6MPdKVBpSlbHXDHK7TwgdSODyzGi5g0Y7LCcVSzhZqMOZ8kZq-Sv9e2_kmUW/exec";
+const TOOL_VERSION = "IAS19_EOSB_HTML_TOOL_V1";
+let pendingLeadAction = null;
+
+function getLeadProfile() {
+  try {
+    return JSON.parse(localStorage.getItem("ias19LeadProfile") || "null");
+  } catch(e) {
+    return null;
+  }
+}
+
+function isValidLeadProfile(p) {
+  return p && p.name && p.company && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email);
+}
+
+function ensureLeadProfile(callback) {
+  const existing = getLeadProfile();
+  if (isValidLeadProfile(existing)) {
+    callback();
+    return;
+  }
+  pendingLeadAction = callback;
+  document.getElementById("leadModalOverlay").style.display = "flex";
+}
+
+function saveLeadAndContinue() {
+  const profile = {
+    name: document.getElementById("leadName").value.trim(),
+    email: document.getElementById("leadEmail").value.trim(),
+    company: document.getElementById("leadCompany").value.trim()
+  };
+
+  if (!isValidLeadProfile(profile)) {
+    document.getElementById("leadError").style.display = "block";
+    return;
+  }
+
+  localStorage.setItem("ias19LeadProfile", JSON.stringify(profile));
+
+  if (LEAD_CAPTURE_URL && !LEAD_CAPTURE_URL.includes("PASTE_GOOGLE")) {
+    try {
+      fetch(LEAD_CAPTURE_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: profile.name,
+          email: profile.email,
+          company: profile.company,
+          toolVersion: TOOL_VERSION,
+          pageUrl: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch(e) {}
+  }
+
+  document.getElementById("leadModalOverlay").style.display = "none";
+
+  if (typeof pendingLeadAction === "function") {
+    const action = pendingLeadAction;
+    pendingLeadAction = null;
+    action();
+  }
+}
+</script>
+</body>
+</html>
